@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import z from "zod";
 
 import type { Database } from "@/mod.ts";
@@ -13,6 +13,8 @@ const tossSelectMultipleSchema = z.object({
 });
 type TossSelectMultiple = z.infer<typeof tossSelectMultipleSchema>;
 
+const isDeleted = sql`${tossTable.deleted_at} is null`;
+
 export const create = async (db: Database, input: TossInsert) => {
   const values = tossInsertSchema.parse(input);
   const tosses = await db.insert(tossTable).values(values).returning();
@@ -21,7 +23,10 @@ export const create = async (db: Database, input: TossInsert) => {
 export const read = async (db: Database, input: TossSelectSingle) => {
   const { id } = tossSelectSingleSchema.parse(input);
   const tosses = await db.select().from(tossTable).where(
-    eq(tossTable.id, id),
+    and(
+      eq(tossTable.id, id),
+      isDeleted,
+    ),
   );
   if (tosses.length < 1) {
     throw new Error("Toss not found");
@@ -30,6 +35,8 @@ export const read = async (db: Database, input: TossSelectSingle) => {
 };
 export const list = async (db: Database, input: TossSelectMultiple) => {
   const { limit, offset } = tossSelectMultipleSchema.parse(input);
-  const tosses = await db.select().from(tossTable).limit(limit).offset(offset);
+  const tosses = await db.select().from(tossTable).where(
+    isDeleted,
+  ).limit(limit).offset(offset);
   return tosses;
 };
