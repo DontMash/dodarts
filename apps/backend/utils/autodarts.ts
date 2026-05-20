@@ -1,5 +1,3 @@
-import { tossCreateSchema } from "../../../packages/api/toss/toss.schema.ts";
-
 export type AutodartsMessage =
   | AutodartsStateMessage
   | AutodartsMotionStateMessage
@@ -106,14 +104,3 @@ type AutodartsCamState = {
   isDart: boolean;
   isTakeout: boolean;
 };
-
-export function mapAutodartsToss(toss: AutodartsToss) {
-  return tossCreateSchema.parse({
-    name: toss.segment.name,
-    segment: toss.segment.bed,
-    value: toss.segment.number,
-    multiplier: toss.segment.multiplier,
-    coords_x: toss.coords.x,
-    coords_y: toss.coords.y,
-  });
-}

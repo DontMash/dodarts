@@ -2,7 +2,7 @@ import { handler, websocketHandler } from "@dodarts/api";
 import { createRouterClient } from "@dodarts/api/client";
 import { Hono } from "hono";
 
-import { AutodartsMessage, mapAutodartsToss } from "@/utils/autodarts.ts";
+import { AutodartsMessage } from "@/utils/autodarts.ts";
 
 const client = createRouterClient();
 const socket = new WebSocket("ws://autodarts.local:3180/api/events");
@@ -21,9 +21,16 @@ socket.addEventListener("message", async (event) => {
       if (!toss) {
         break;
       }
-      const mapped = mapAutodartsToss(toss);
       try {
-        await client.toss.create(mapped);
+        await client.toss.create({
+          // deno-lint-ignore no-explicit-any
+          name: toss.segment.name as any,
+          // deno-lint-ignore no-explicit-any
+          segment: toss.segment.bed as any,
+          value: toss.segment.number,
+          multiplier: toss.segment.multiplier,
+          coords: toss.coords,
+        });
       } catch (err) {
         console.error("Failed to insert toss:", err);
       }

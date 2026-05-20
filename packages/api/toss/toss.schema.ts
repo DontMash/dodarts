@@ -101,9 +101,9 @@ export const tossSchema = z.object({
   value: z.number().int(),
   multiplier: z.number().int(),
   coords: z.object({
-    x: z.number(),
-    y: z.number(),
-  }).optional(),
+    x: z.number().nullable(),
+    y: z.number().nullable(),
+  }),
   meta: z.object({
     updated_at: z.number().int(),
     created_at: z.number().int(),

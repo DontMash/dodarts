@@ -17,21 +17,21 @@ import {
 } from "./toss.schema.ts";
 
 const map = (value: Awaited<ReturnType<typeof readToss>>): Toss => {
-  const toss: Toss = {
+  return {
     id: value.id,
     name: value.name,
     segment: value.segment,
     value: value.value,
     multiplier: value.multiplier,
+    coords: {
+      x: value.coords_x,
+      y: value.coords_y,
+    },
     meta: {
       updated_at: value.updated_at.getTime(),
       created_at: value.created_at.getTime(),
     },
   };
-  if (value.coords_x && value.coords_y) {
-    toss.coords = { x: value.coords_x, y: value.coords_y };
-  }
-  return toss;
 };
 
 class TossEvent extends CustomEvent<Toss> {
@@ -64,7 +64,11 @@ const create = os.toss.create.handler(async (
 ) => {
   try {
     const { db } = context;
-    const entry = await createToss(db, input);
+    const entry = await createToss(db, {
+      ...input,
+      coords_x: input.coords.x,
+      coords_y: input.coords.y,
+    });
     const toss = map(entry);
     dispatchEvent(new TossEvent(toss));
     return toss;
