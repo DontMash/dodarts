@@ -1,7 +1,8 @@
 {
   "imports": {
     "@/": "./",
-    "hono": "jsr:@hono/hono@^4.12.18"
+    "hono": "jsr:@hono/hono@^4.12.18",
+    "partysocket": "npm:partysocket@^1.1.19"
   },
   "tasks": {
     "dev": "deno run --allow-read --allow-net --allow-env --allow-ffi --watch main.ts",

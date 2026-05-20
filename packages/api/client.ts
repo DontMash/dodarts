@@ -3,6 +3,7 @@ import { RPCLink } from "@orpc/client/fetch";
 import { RPCLink as WebsocketRPCLink } from "@orpc/client/websocket";
 import type { RouterClient } from "@orpc/server";
 import { createRouterClient as createORPCRouterClient } from "@orpc/server";
+import { WebSocket } from "partysocket";
 
 import router from "@/router.ts";
 

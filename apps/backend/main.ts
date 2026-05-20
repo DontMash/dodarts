@@ -1,12 +1,12 @@
 import { handler, websocketHandler } from "@dodarts/api";
 import { createRouterClient } from "@dodarts/api/client";
 import { Hono } from "hono";
+import { WebSocket } from "partysocket";
 
 import { AutodartsMessage } from "@/utils/autodarts.ts";
 
 const client = createRouterClient();
-const socket = new WebSocket("ws://autodarts.local:3180/api/events");
-socket.addEventListener("message", async (event) => {
+async function handleMessage(event: MessageEvent) {
   const value = JSON.parse(event.data) as AutodartsMessage;
   switch (value.type) {
     case "state": {
@@ -42,7 +42,31 @@ socket.addEventListener("message", async (event) => {
     case "cam_stats":
       break;
   }
-});
+}
+
+function connectAutodarts(maxRetries = 5) {
+  const options = {
+    connectionTimeout: 1000,
+    maxRetries,
+  };
+  const socket = new WebSocket(
+    "ws://autodarts.local:3180/api/events",
+    [],
+    options,
+  );
+
+  socket.addEventListener("open", () => {
+    console.info("[Autodarts] Connection opened");
+  });
+  socket.addEventListener("message", (event) => handleMessage(event));
+  socket.addEventListener("error", () => {
+    console.error("[Autodarts] Connection error");
+  });
+  socket.addEventListener("close", () => {
+    console.info("[Autodarts] Connection closed");
+  });
+}
+connectAutodarts();
 
 const app = new Hono();
 
