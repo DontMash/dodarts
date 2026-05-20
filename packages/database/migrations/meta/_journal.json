@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1779105170075,
+      "tag": "0000_low_rage",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1779134316318,
+      "tag": "0001_curious_tony_stark",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1779233128512,
+      "tag": "0002_outstanding_outlaw_kid",
+      "breakpoints": true
+    }
+  ]
+}

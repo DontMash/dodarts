@@ -1,0 +1,15 @@
+{
+  "name": "@dodarts/api",
+  "version": "0.0.1",
+  "exports": {
+    ".": "./mod.ts",
+    "./client": "./client.ts"
+  },
+  "imports": {
+    "@/": "./",
+    "@orpc/client": "npm:@orpc/client@^1.14.3",
+    "@orpc/contract": "npm:@orpc/contract@^1.14.3",
+    "@orpc/server": "npm:@orpc/server@^1.14.3",
+    "zod": "npm:zod@^4.4.3"
+  }
+}

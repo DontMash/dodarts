@@ -1,0 +1,14 @@
+{
+  "imports": {
+    "@/": "./",
+    "hono": "jsr:@hono/hono@^4.12.18"
+  },
+  "tasks": {
+    "dev": "deno run --allow-read --allow-net --allow-env --allow-ffi --watch main.ts",
+    "start": "deno run --allow-read --allow-net --allow-env --allow-ffi main.ts"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "hono/jsx"
+  }
+}
