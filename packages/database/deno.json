@@ -17,6 +17,7 @@
     "generate": "deno run --allow-write --allow-read --allow-env --allow-sys npm:drizzle-kit generate --config=./config.ts",
     "push": "deno run --allow-read --allow-env --allow-sys --allow-ffi npm:drizzle-kit push --config=./config.ts",
     "update": "deno task generate && deno task push",
+    "check": "deno run --allow-read --allow-env --allow-sys npm:drizzle-kit check --config=./config.ts",
     "studio": "deno run --allow-read --allow-net --allow-env --allow-sys --allow-ffi --allow-run npm:drizzle-kit studio --config=./config.ts"
   }
 }
