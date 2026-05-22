@@ -1,9 +1,10 @@
+import EventEmitter from "node:events";
 import {
   create as createToss,
   list as listToss,
   read as readToss,
 } from "@dodarts/database/toss";
-import { eventIterator, implement, ORPCError } from "@orpc/server";
+import { eventIterator, implement } from "@orpc/server";
 import { oc } from "@orpc/contract";
 
 import dbMiddleware from "@/database.middleware.ts";
@@ -15,6 +16,10 @@ import {
   tossReadSchema,
   tossSchema,
 } from "./toss.schema.ts";
+
+const emitter = new EventEmitter<{
+  created: [toss: Toss];
+}>();
 
 const map = (value: Awaited<ReturnType<typeof readToss>>): Toss => {
   return {
@@ -34,16 +39,12 @@ const map = (value: Awaited<ReturnType<typeof readToss>>): Toss => {
   };
 };
 
-class TossEvent extends CustomEvent<Toss> {
-  static NAME = "toss-create" as const;
-
-  constructor(toss: Toss) {
-    super(TossEvent.NAME, { detail: toss });
-  }
-}
-
-const createContract = oc.input(tossCreateSchema).output(tossSchema);
-const readContract = oc.input(tossReadSchema).output(tossSchema);
+const createContract = oc.input(tossCreateSchema).output(tossSchema).errors({
+  "SERVER_ISSUE": {},
+});
+const readContract = oc.input(tossReadSchema).output(tossSchema).errors({
+  "SERVER_ISSUE": {},
+});
 const listContract = oc
   .input(tossListSchema)
   .output(tossSchema.array());
@@ -70,13 +71,13 @@ const create = os.toss.create.handler(async (
       coords_y: input.coords.y,
     });
     const toss = map(entry);
-    dispatchEvent(new TossEvent(toss));
+    emitter.emit("created", toss);
     return toss;
   } catch (err) {
     throw errors.SERVER_ISSUE({ message: `Failed to create Toss: ${err}` });
   }
 }).callable();
-const read = os.toss.read.handler(async ({ context, input }) => {
+const read = os.toss.read.handler(async ({ context, errors, input }) => {
   try {
     const { db } = context;
     const entry = await readToss(db, input);
@@ -93,12 +94,10 @@ const list = os.toss.list.handler(async ({ context, input }) => {
 const subscribe = os.toss.subscribe.handler(
   async function* () {
     while (true) {
-      const toss = await new Promise<Toss>((resolve) =>
-        addEventListener(TossEvent.NAME, (ev) => {
-          const event = ev as TossEvent;
-          resolve(event.detail);
-        }, { once: true })
-      );
+      const toss = await new Promise<Toss>((resolve) => {
+        const listener = (detail: unknown) => resolve(detail as Toss);
+        emitter.once("created", listener);
+      });
       yield toss;
     }
   },
