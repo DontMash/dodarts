@@ -75,8 +75,6 @@ app.use("/api/*", async (c, next) => {
 
   if (c.req.header("Upgrade") === "websocket") {
     const { socket, response } = Deno.upgradeWebSocket(c.req.raw);
-    socket.addEventListener("open", () => console.log("Hello"));
-    socket.addEventListener("close", () => console.log("Bye"));
 
     websocketHandler.upgrade(socket, {
       context,
