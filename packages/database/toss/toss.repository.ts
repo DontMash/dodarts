@@ -8,8 +8,8 @@ type TossInsert = z.infer<typeof tossInsertSchema>;
 const tossSelectSingleSchema = tossSelectSchema.pick({ id: true });
 type TossSelectSingle = z.infer<typeof tossSelectSingleSchema>;
 const tossSelectMultipleSchema = z.object({
-  limit: z.number().int().min(0),
-  offset: z.number().int().min(1),
+  limit: z.number().int().min(1),
+  offset: z.number().int().min(0),
 });
 type TossSelectMultiple = z.infer<typeof tossSelectMultipleSchema>;
 

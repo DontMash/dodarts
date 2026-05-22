@@ -107,7 +107,6 @@ export const tossSchema = z.object({
   meta: z.object({
     updated_at: z.number().int(),
     created_at: z.number().int(),
-    deleted_at: z.number().int().optional(),
   }),
 });
 export type Toss = z.infer<typeof tossSchema>;
