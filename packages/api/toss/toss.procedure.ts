@@ -60,7 +60,7 @@ const contract = {
 const os = implement(contract).use(dbMiddleware);
 
 const create = os.toss.create.handler(async (
-  { context, input },
+  { context, errors, input },
 ) => {
   try {
     const { db } = context;
@@ -73,7 +73,7 @@ const create = os.toss.create.handler(async (
     dispatchEvent(new TossEvent(toss));
     return toss;
   } catch (err) {
-    throw new ORPCError(`Failed to create Toss: ${err}`);
+    throw errors.SERVER_ISSUE({ message: `Failed to create Toss: ${err}` });
   }
 }).callable();
 const read = os.toss.read.handler(async ({ context, input }) => {
@@ -82,7 +82,7 @@ const read = os.toss.read.handler(async ({ context, input }) => {
     const entry = await readToss(db, input);
     return map(entry);
   } catch (err) {
-    throw new ORPCError(`Failed to read Toss: ${err}`);
+    throw errors.SERVER_ISSUE({ message: `Failed to read Toss: ${err}` });
   }
 }).callable();
 const list = os.toss.list.handler(async ({ context, input }) => {
