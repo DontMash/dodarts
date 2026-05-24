@@ -55,8 +55,8 @@ function createClient(options: ClientOptions) {
   return result;
 }
 
-export { createClient, createRouterClient };
-
 const createRouterClient = () => {
   return createORPCRouterClient(router);
 };
+
+export { createClient, createRouterClient };

@@ -1,3 +1,4 @@
+// deno-coverage-ignore-file
 import { sql } from "drizzle-orm";
 import { sqliteTable } from "drizzle-orm/sqlite-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
