@@ -10,7 +10,8 @@
   "tasks": {
     "test": "deno test --allow-write --allow-read --allow-env --allow-ffi --env=.env.test",
     "test:coverage": "deno task test --coverage",
-    "coverage": "deno coverage"
+    "coverage": "deno coverage",
+    "verify": "deno fmt && deno check && deno lint && deno task test:coverage"
   },
   "fmt": {
     "exclude": [

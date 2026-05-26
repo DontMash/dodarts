@@ -1,6 +1,6 @@
 import { handler, websocketHandler } from "@dodarts/api";
 import { createRouterClient } from "@dodarts/api/client";
-import { create as createDb } from "@dodarts/database";
+import { create as createDb, type Database } from "@dodarts/database";
 import { env } from "@dodarts/shared";
 import { Hono } from "hono";
 import { WebSocket } from "partysocket";
@@ -9,7 +9,11 @@ import { AutodartsMessage } from "@/utils/autodarts.ts";
 
 const db = createDb(env.DATABASE_URL);
 const client = createRouterClient(db);
-async function handleMessage(event: MessageEvent) {
+
+export async function handleMessage(
+  event: MessageEvent,
+  client: ReturnType<typeof createRouterClient>,
+) {
   const value = JSON.parse(event.data) as AutodartsMessage;
   switch (value.type) {
     case "state": {
@@ -61,7 +65,7 @@ function connectAutodarts(maxRetries = 5) {
   socket.addEventListener("open", () => {
     console.info("[Autodarts] Connection opened");
   });
-  socket.addEventListener("message", (event) => handleMessage(event));
+  socket.addEventListener("message", (event) => handleMessage(event, client));
   socket.addEventListener("error", () => {
     console.error("[Autodarts] Connection error");
   });
@@ -69,33 +73,40 @@ function connectAutodarts(maxRetries = 5) {
     console.info("[Autodarts] Connection closed");
   });
 }
-connectAutodarts();
 
-const app = new Hono();
+export function createApp(db: Database) {
+  const hono = new Hono();
 
-app.use("/api/*", async (c, next) => {
-  const context = { db };
+  hono.use("/api/*", async (c, next) => {
+    const context = { db };
 
-  if (c.req.header("Upgrade") === "websocket") {
-    const { socket, response } = Deno.upgradeWebSocket(c.req.raw);
+    if (c.req.header("Upgrade") === "websocket") {
+      const { socket, response } = Deno.upgradeWebSocket(c.req.raw);
 
-    websocketHandler.upgrade(socket, {
+      websocketHandler.upgrade(socket, {
+        context,
+      });
+
+      return c.newResponse(response.body, response);
+    }
+
+    const { matched, response } = await handler.handle(c.req.raw, {
+      prefix: "/api",
       context,
     });
 
-    return c.newResponse(response.body, response);
-  }
+    if (matched) {
+      return c.newResponse(response.body, response);
+    }
 
-  const { matched, response } = await handler.handle(c.req.raw, {
-    prefix: "/api",
-    context,
+    await next();
   });
 
-  if (matched) {
-    return c.newResponse(response.body, response);
-  }
+  return hono;
+}
 
-  await next();
-});
-
-Deno.serve(app.fetch);
+export const app = createApp(db);
+if (import.meta.main) {
+  connectAutodarts();
+  Deno.serve(app.fetch);
+}
