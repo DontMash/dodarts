@@ -1,4 +1,5 @@
 import EventEmitter from "node:events";
+import type { Database } from "@dodarts/database";
 import {
   create as createToss,
   list as listToss,
@@ -6,8 +7,6 @@ import {
 } from "@dodarts/database/toss";
 import { eventIterator, implement } from "@orpc/server";
 import { oc } from "@orpc/contract";
-
-import dbMiddleware from "@/database.middleware.ts";
 
 import {
   type Toss,
@@ -58,7 +57,7 @@ const contract = {
   },
 };
 
-const os = implement(contract).use(dbMiddleware);
+const os = implement(contract).$context<{ db: Database }>();
 
 const create = os.toss.create.handler(async (
   { context, errors, input },
@@ -76,7 +75,7 @@ const create = os.toss.create.handler(async (
   } catch (err) {
     throw errors.SERVER_ISSUE({ message: `Failed to create Toss: ${err}` });
   }
-}).callable();
+});
 const read = os.toss.read.handler(async ({ context, errors, input }) => {
   try {
     const { db } = context;
@@ -85,12 +84,12 @@ const read = os.toss.read.handler(async ({ context, errors, input }) => {
   } catch (err) {
     throw errors.SERVER_ISSUE({ message: `Failed to read Toss: ${err}` });
   }
-}).callable();
+});
 const list = os.toss.list.handler(async ({ context, input }) => {
   const { db } = context;
   const entries = await listToss(db, input);
   return entries.map((entry) => map(entry));
-}).callable();
+});
 const subscribe = os.toss.subscribe.handler(
   async function* () {
     while (true) {
@@ -101,7 +100,7 @@ const subscribe = os.toss.subscribe.handler(
       yield toss;
     }
   },
-).callable();
+);
 
 const router = os.router({
   toss: {

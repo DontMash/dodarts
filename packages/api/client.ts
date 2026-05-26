@@ -3,6 +3,7 @@ import { RPCLink } from "@orpc/client/fetch";
 import { RPCLink as WebsocketRPCLink } from "@orpc/client/websocket";
 import type { RouterClient } from "@orpc/server";
 import { createRouterClient as createORPCRouterClient } from "@orpc/server";
+import type { Database } from "@dodarts/database";
 import { WebSocket } from "partysocket";
 
 import router from "@/router.ts";
@@ -55,8 +56,8 @@ function createClient(options: ClientOptions) {
   return result;
 }
 
-const createRouterClient = () => {
-  return createORPCRouterClient(router);
+const createRouterClient = (db: Database) => {
+  return createORPCRouterClient(router, { context: { db } });
 };
 
 export { createClient, createRouterClient };
