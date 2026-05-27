@@ -17,51 +17,17 @@ packages/shared/   ← @dodarts/shared — .env loading + Zod validation (leaf p
 Dependency graph: `shared` ← `database` ← `api` ← `apps/*`, `api` ←
 `apps/frontend`
 
-## Commands
+## Workspace docs
 
-All tasks run from the workspace root or within a package.
+- [Backend](./apps/backend/AGENTS.md)
+- [Frontend](./apps/frontend/AGENTS.md)
+- [API](./packages/api/AGENTS.md)
+- [Database](./packages/database/AGENTS.md)
+- [Shared](./packages/shared/AGENTS.md)
 
-| Command                                       | Description                         |
-| --------------------------------------------- | ----------------------------------- |
-| `deno task dev` (in `apps/backend`)           | Start backend dev server with watch |
-| `deno task start` (in `apps/backend`)         | Run backend production              |
-| `deno task dev` (in `apps/frontend`)          | Start frontend dev server (Vite)    |
-| `deno task build` (in `apps/frontend`)        | Build frontend for production       |
-| `deno task preview` (in `apps/frontend`)      | Preview production build            |
-| `deno task check` (in `packages/database`)    | Check drizzle status                |
-| `deno task generate` (in `packages/database`) | Generate drizzle migrations         |
-| `deno task push` (in `packages/database`)     | Push drizzle schema to DB           |
-| `deno task update` (in `packages/database`)   | Generate + push in one step         |
-| `deno task studio` (in `packages/database`)   | Open drizzle Studio                 |
-| `deno task test`                              | Run tests                           |
-| `deno task test:coverage`                     | Run tests with coverage report      |
-| `deno task coverage`                          | Show coverage report                |
+## Tests
 
-## Environment
-
-- **Required**: `DATABASE_URL` — validated by `@dodarts/shared`. See
-  `.env.example` for a starting point.
-- **Frontend**: `VITE_WS_URL` — WebSocket URL for ORPC client (e.g.
-  `ws://localhost:8000/api`). See `apps/frontend/.env.example`.
-- All `.env` files are gitignored except `.env.example`; local overrides like
-  `.env.local` are also excluded to prevent leaks.
-- The backend hardcodes `ws://autodarts.local:3180/api/events` for the Autodarts
-  camera feed (not configurable via env).
-
-## Architecture notes
-
-- **API layer**: ORPC (`@orpc/server`) over Hono, with HTTP fetch and WebSocket
-  upgrade handlers exported from `packages/api/mod.ts`.
-- **Real-time**: The `subscribe` procedure uses event iterators over WebSocket.
-  The frontend uses a single WebSocket client for both history (`toss.list`) and
-  real-time updates (`toss.subscribe`).
-- **Frontend**: TanStack Start in SPA mode (no SSR). Client-side routing with
-  TanStack Router, styled with Tailwind CSS. Dartboard visualization plots toss
-  coordinates; list shows recent throws with live updates.
-- **Soft deletes**: `tosses` table has `deleted_at`; all queries filter with
-  `isDeleted = sql\`${table.deleted_at} is null\``.
-- **Database**: libSQL via Drizzle ORM..
-- **Tests**: Written in AAA-Pattern (Arrange, Act, Assert).
+- Written in AAA-Pattern (Arrange, Act, Assert).
 
 ## Verification
 

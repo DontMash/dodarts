@@ -1,8 +1,0 @@
-{
-  "imports": {
-    "@/": "./"
-  },
-  "tasks": {
-    "dev": "deno run --allow-read --allow-net --allow-env --allow-ffi --watch main.ts"
-  }
-}
