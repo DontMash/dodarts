@@ -1,0 +1,12 @@
+.DS_Store
+dist
+dist-ssr
+*.local
+count.txt
+.env
+.nitro
+.tanstack
+__unconfig*
+todos.json
+deno.lock
+.vite

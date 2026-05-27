@@ -4,10 +4,16 @@ import { assertEquals } from "@std/assert";
 import { assertSpyCalls, spy } from "@std/testing/mock";
 
 import { createRouterClient } from "@dodarts/api/client";
+import type { Emitter } from "@dodarts/api/emitter";
 import type { Database } from "@dodarts/database";
 
 import { createApp, handleMessage } from "@/main.ts";
 import type { Toss } from "../../packages/api/toss/toss.schema.ts";
+
+const mockEmitter: Emitter = {
+  emit() {},
+  once() {},
+};
 
 interface MockToss extends Toss {
   meta: Toss["meta"] & { deleted_at?: number | null };
@@ -70,7 +76,7 @@ function createMockDb(rows: MockToss[]): Database {
 }
 
 function createMockClient(db: Database) {
-  return createRouterClient(db);
+  return createRouterClient({ db, emitter: mockEmitter });
 }
 
 describe("handleMessage", () => {
@@ -321,7 +327,7 @@ describe("app", () => {
   it("returns 404 for non-API routes", async () => {
     // Arrange
     const db = createMockDb([]);
-    const testApp = createApp(db);
+    const testApp = createApp({ db, emitter: mockEmitter });
     const req = new Request("http://localhost/");
 
     // Act
@@ -334,7 +340,7 @@ describe("app", () => {
   it("rejects invalid toss.create input via API route", async () => {
     // Arrange
     const db = createMockDb([]);
-    const testApp = createApp(db);
+    const testApp = createApp({ db, emitter: mockEmitter });
     const req = new Request("http://localhost/api/toss.create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

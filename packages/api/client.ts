@@ -1,24 +1,25 @@
+import type { Database } from "@dodarts/database";
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { RPCLink as WebsocketRPCLink } from "@orpc/client/websocket";
 import type { RouterClient } from "@orpc/server";
 import { createRouterClient as createORPCRouterClient } from "@orpc/server";
-import type { Database } from "@dodarts/database";
 import { WebSocket } from "partysocket";
 
-import router from "@/router.ts";
+import type { Emitter } from "./emitter.ts";
+import router from "./router.ts";
 
 interface ClientOptions {
   fetchUrl?: string;
   websocketUrl?: string;
 }
 
-function createClient(
-  options: { fetchUrl: string },
-): { fetch: RouterClient<typeof router> };
-function createClient(
-  options: { websocketUrl: string },
-): { websocket: RouterClient<typeof router> };
+function createClient(options: { fetchUrl: string }): {
+  fetch: RouterClient<typeof router>;
+};
+function createClient(options: { websocketUrl: string }): {
+  websocket: RouterClient<typeof router>;
+};
 function createClient(options: { fetchUrl: string; websocketUrl: string }): {
   fetch: RouterClient<typeof router>;
   websocket: RouterClient<typeof router>;
@@ -56,8 +57,8 @@ function createClient(options: ClientOptions) {
   return result;
 }
 
-const createRouterClient = (db: Database) => {
-  return createORPCRouterClient(router, { context: { db } });
+const createRouterClient = (options: { db: Database; emitter: Emitter }) => {
+  return createORPCRouterClient(router, { context: options });
 };
 
 export { createClient, createRouterClient };

@@ -1,0 +1,89 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { IconCircleDashed } from "@tabler/icons-react";
+import { api, type Toss } from "@/lib/api";
+import { Dartboard } from "@/components/dartboard";
+import { TossList } from "@/components/toss-list";
+
+export const Route = createFileRoute("/")({ component: Dashboard });
+
+const HISTORY_LIMIT = 50;
+
+function Dashboard() {
+  const [tosses, setTosses] = useState<Toss[]>([]);
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function init() {
+      try {
+        const history = await api.toss.list({
+          limit: HISTORY_LIMIT,
+          offset: 0,
+        });
+        if (cancelled) return;
+        setTosses(history);
+
+        const subscription = await api.toss.subscribe({});
+        if (cancelled) return;
+        setConnected(true);
+
+        for await (const toss of subscription) {
+          if (cancelled) break;
+          setTosses((prev) => [toss, ...prev].slice(0, 200));
+        }
+      } catch (err) {
+        console.log(err);
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Connection failed");
+        }
+      }
+    }
+
+    init();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <div className="flex min-h-svk flex-col p-6">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <h1 className="font-heading text-2xl font-semibold">dodarts</h1>
+          <div className="flex items-center gap-2 text-sm">
+            {error
+              ? <span className="text-destructive">{error}</span>
+              : connected
+              ? (
+                <span className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                  <span className="size-2 animate-pulse rounded-full bg-green-500" />
+                  Live
+                </span>
+              )
+              : (
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <IconCircleDashed className="size-3 animate-spin" />
+                  Connecting...
+                </span>
+              )}
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="flex items-center justify-center">
+            <Dartboard tosses={tosses} />
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <h2 className="font-heading text-lg font-medium">Recent Throws</h2>
+            <TossList tosses={tosses} latestId={tosses[0]?.id} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

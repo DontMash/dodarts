@@ -1,12 +1,18 @@
+import type { Database } from "@dodarts/database";
 import { describe, it } from "@std/testing/bdd";
 import { assertEquals, assertThrows } from "@std/assert";
 
-import { createClient, createRouterClient } from "@/client.ts";
-import type { Database } from "@dodarts/database";
+import type { Emitter } from "./emitter.ts";
+import { createClient, createRouterClient } from "./client.ts";
 
 function createMockDb(): Database {
   return {} as unknown as Database;
 }
+
+const mockEmitter: Emitter = {
+  emit() {},
+  once() {},
+};
 
 // WebSocket and RPCLink create timers internally; disable leak detection for those tests.
 Deno.test({
@@ -66,7 +72,7 @@ describe("createClient", () => {
 describe("createRouterClient", () => {
   it("returns an object with toss procedures", () => {
     const db = createMockDb();
-    const client = createRouterClient(db);
+    const client = createRouterClient({ db, emitter: mockEmitter });
 
     assertEquals(typeof client.toss, "object");
     assertEquals(typeof client.toss.create, "function");

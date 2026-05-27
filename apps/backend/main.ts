@@ -1,14 +1,17 @@
 import { handler, websocketHandler } from "@dodarts/api";
 import { createRouterClient } from "@dodarts/api/client";
+import type { Emitter } from "@dodarts/api/emitter";
 import { create as createDb, type Database } from "@dodarts/database";
 import { env } from "@dodarts/shared";
 import { Hono } from "hono";
+import EventEmitter from "node:events";
 import { WebSocket } from "partysocket";
 
 import { AutodartsMessage } from "@/utils/autodarts.ts";
 
 const db = createDb(env.DATABASE_URL);
-const client = createRouterClient(db);
+const emitter: Emitter = new EventEmitter();
+const client = createRouterClient({ db, emitter });
 
 export async function handleMessage(
   event: MessageEvent,
@@ -74,12 +77,10 @@ function connectAutodarts(maxRetries = 5) {
   });
 }
 
-export function createApp(db: Database) {
+export function createApp(context: { db: Database; emitter: Emitter }) {
   const hono = new Hono();
 
   hono.use("/api/*", async (c, next) => {
-    const context = { db };
-
     if (c.req.header("Upgrade") === "websocket") {
       const { socket, response } = Deno.upgradeWebSocket(c.req.raw);
 
@@ -105,7 +106,7 @@ export function createApp(db: Database) {
   return hono;
 }
 
-export const app = createApp(db);
+export const app = createApp({ db, emitter });
 if (import.meta.main) {
   connectAutodarts();
   Deno.serve(app.fetch);

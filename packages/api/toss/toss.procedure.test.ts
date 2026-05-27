@@ -6,8 +6,30 @@ import { assertEquals, assertRejects } from "@std/assert";
 import { createRouterClient } from "@orpc/server";
 import type { Database } from "@dodarts/database";
 
-import router from "@/router.ts";
+import type { Emitter, EventMap } from "../emitter.ts";
+import router from "../router.ts";
 import type { Toss } from "./toss.schema.ts";
+
+class MockEmitter implements Emitter {
+  #listeners = new Map<string, ((payload: unknown) => void)[]>();
+
+  emit<K extends keyof EventMap>(event: K, payload: EventMap[K]): void {
+    const key = event as string;
+    const handlers = this.#listeners.get(key) ?? [];
+    this.#listeners.set(key, []);
+    for (const handler of handlers) handler(payload);
+  }
+
+  once<K extends keyof EventMap>(
+    event: K,
+    listener: (payload: EventMap[K]) => void,
+  ): void {
+    const key = event as string;
+    const existing = this.#listeners.get(key) ?? [];
+    existing.push(listener as (payload: unknown) => void);
+    this.#listeners.set(key, existing);
+  }
+}
 
 interface MockToss {
   id: number;
@@ -47,14 +69,18 @@ function createMockDb(rows: MockToss[]): Database {
       where: () => ({
         then: (cb: (rows: MockToss[]) => unknown) =>
           cb(storedRows.filter((r) => r.deleted_at == null)),
-        limit: (n: number) => ({
-          offset: (o: number) => ({
-            then: (cb: (rows: MockToss[]) => unknown) =>
-              cb(
-                storedRows
-                  .filter((r) => r.deleted_at == null)
-                  .slice(o, o + n),
-              ),
+        orderBy: () => ({
+          then: (cb: (rows: MockToss[]) => unknown) =>
+            cb(storedRows.filter((r) => r.deleted_at == null)),
+          limit: (n: number) => ({
+            offset: (o: number) => ({
+              then: (cb: (rows: MockToss[]) => unknown) =>
+                cb(
+                  storedRows
+                    .filter((r) => r.deleted_at == null)
+                    .slice(o, o + n),
+                ),
+            }),
           }),
         }),
       }),
@@ -107,7 +133,8 @@ describe("toss.create", () => {
   it("creates a toss and returns it in API shape", async () => {
     // Arrange
     const db = createMockDb([]);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     const result = await client.toss.create({
@@ -132,7 +159,8 @@ describe("toss.create", () => {
   it("returns toss with optional coords", async () => {
     // Arrange
     const db = createMockDb([]);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     const result = await client.toss.create({
@@ -151,7 +179,8 @@ describe("toss.create", () => {
   it("calls db.insert once", async () => {
     // Arrange
     const db = createMockDb([]);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     await client.toss.create({
@@ -174,7 +203,8 @@ describe("toss.create", () => {
       }),
       select: spy(() => ({})),
     } as unknown as Database;
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act & Assert
     await assertRejects(
@@ -194,7 +224,8 @@ describe("toss.read", () => {
   it("returns a toss by id", async () => {
     // Arrange
     const db = createMockDb(mockTosses);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     const result = await client.toss.read({ id: 1 });
@@ -220,7 +251,8 @@ describe("toss.read", () => {
       created_at: earlier,
     };
     const db = createMockDb([tossWithCoords]);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     const result = await client.toss.read({ id: 2 });
@@ -233,7 +265,8 @@ describe("toss.read", () => {
   it("throws SERVER_ISSUE when toss not found", async () => {
     // Arrange
     const db = createMockDb([]);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act & Assert
     await assertRejects(() => client.toss.read({ id: 999 }));
@@ -247,7 +280,8 @@ describe("toss.read", () => {
       deleted_at: Date.now(),
     };
     const db = createMockDb([deletedToss]);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act & Assert
     await assertRejects(() => client.toss.read({ id: 99 }));
@@ -256,7 +290,8 @@ describe("toss.read", () => {
   it("calls db.select once", async () => {
     // Arrange
     const db = createMockDb(mockTosses);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     await client.toss.read({ id: 1 });
@@ -270,7 +305,8 @@ describe("toss.list", () => {
   it("returns paginated tosses in API shape", async () => {
     // Arrange
     const db = createMockDb(mockTosses);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     const result = await client.toss.list({ limit: 2, offset: 0 });
@@ -286,7 +322,8 @@ describe("toss.list", () => {
   it("respects limit and offset", async () => {
     // Arrange
     const db = createMockDb(mockTosses);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     const result = await client.toss.list({ limit: 2, offset: 1 });
@@ -300,7 +337,8 @@ describe("toss.list", () => {
   it("returns empty array when no tosses", async () => {
     // Arrange
     const db = createMockDb([]);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     const result = await client.toss.list({ limit: 10, offset: 0 });
@@ -316,7 +354,8 @@ describe("toss.list", () => {
       { ...mockTosses[0], id: 99, deleted_at: Date.now() },
     ];
     const db = createMockDb(tosses);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     const result = await client.toss.list({ limit: 10, offset: 0 });
@@ -329,7 +368,8 @@ describe("toss.list", () => {
   it("calls db.select once", async () => {
     // Arrange
     const db = createMockDb(mockTosses);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     await client.toss.list({ limit: 10, offset: 0 });
@@ -343,7 +383,8 @@ describe("toss.subscribe", () => {
   it("yields a toss when create is called", async () => {
     // Arrange
     const db = createMockDb([]);
-    const client = createRouterClient(router, { context: { db } });
+    const emitter = new MockEmitter();
+    const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
     const iterator = await client.toss.subscribe();

@@ -3,8 +3,8 @@ import { describe, it } from "@std/testing/bdd";
 import { assertSpyCalls, spy } from "@std/testing/mock";
 import { assertEquals, assertRejects } from "@std/assert";
 
-import type { Database } from "@/mod.ts";
-import { create, list, read } from "@/toss/toss.repository.ts";
+import type { Database } from "../mod.ts";
+import { create, list, read } from "./toss.repository.ts";
 
 interface MockToss {
   id: number;
@@ -43,15 +43,23 @@ function createMockDb(rows: MockToss[]): Database {
           );
           cb(filtered);
         },
-        limit: (limit: number) => ({
-          offset: (offset: number) => ({
-            then: (cb: (rows: MockToss[]) => unknown) => {
-              const filtered = storedRows.filter(
-                (row) =>
-                  row.deleted_at === undefined || row.deleted_at === null,
-              );
-              cb(filtered.slice(offset, offset + limit));
-            },
+        orderBy: () => ({
+          then: (cb: (rows: MockToss[]) => unknown) => {
+            const filtered = storedRows.filter(
+              (row) => row.deleted_at === undefined || row.deleted_at === null,
+            );
+            cb(filtered);
+          },
+          limit: (limit: number) => ({
+            offset: (offset: number) => ({
+              then: (cb: (rows: MockToss[]) => unknown) => {
+                const filtered = storedRows.filter(
+                  (row) =>
+                    row.deleted_at === undefined || row.deleted_at === null,
+                );
+                cb(filtered.slice(offset, offset + limit));
+              },
+            }),
           }),
         }),
       }),

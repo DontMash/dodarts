@@ -1,7 +1,7 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import z from "zod";
 
-import type { Database } from "@/mod.ts";
+import type { Database } from "../mod.ts";
 import { tossInsertSchema, tossSelectSchema, tossTable } from "./toss.table.ts";
 
 type TossInsert = z.infer<typeof tossInsertSchema>;
@@ -37,6 +37,6 @@ export const list = async (db: Database, input: TossSelectMultiple) => {
   const { limit, offset } = tossSelectMultipleSchema.parse(input);
   const tosses = await db.select().from(tossTable).where(
     isDeleted,
-  ).limit(limit).offset(offset);
+  ).orderBy(desc(tossTable.created_at)).limit(limit).offset(offset);
   return tosses;
 };
