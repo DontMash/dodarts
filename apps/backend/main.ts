@@ -2,20 +2,18 @@ import { handler, websocketHandler } from "@dodarts/api";
 import { createRouterClient } from "@dodarts/api/client";
 import type { Emitter } from "@dodarts/api/emitter";
 import { create as createDb, type Database } from "@dodarts/database";
-import { env } from "./env.ts";
 import { Hono } from "hono";
 import EventEmitter from "node:events";
 import { WebSocket } from "partysocket";
 
+import { env } from "@/env.ts";
 import { AutodartsMessage } from "@/utils/autodarts.ts";
 
-const db = createDb(env.DATABASE_URL);
-const emitter: Emitter = new EventEmitter();
-const client = createRouterClient({ db, emitter });
+type Client = ReturnType<typeof createRouterClient>;
 
 export async function handleMessage(
   event: MessageEvent,
-  client: ReturnType<typeof createRouterClient>,
+  client: Client,
 ) {
   const value = JSON.parse(event.data) as AutodartsMessage;
   switch (value.type) {
@@ -54,7 +52,10 @@ export async function handleMessage(
   }
 }
 
-function connectAutodarts(maxRetries = 5) {
+function connectAutodarts(
+  client: Client,
+  maxRetries = 5,
+) {
   const options = {
     connectionTimeout: 1000,
     maxRetries,
@@ -106,8 +107,12 @@ export function createApp(context: { db: Database; emitter: Emitter }) {
   return hono;
 }
 
-export const app = createApp({ db, emitter });
 if (import.meta.main) {
-  connectAutodarts();
+  const db = createDb(env.DATABASE_URL);
+  const emitter: Emitter = new EventEmitter();
+  const client = createRouterClient({ db, emitter });
+  const app = createApp({ db, emitter });
+
+  connectAutodarts(client);
   Deno.serve(app.fetch);
 }
