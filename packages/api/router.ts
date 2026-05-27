@@ -1,4 +1,4 @@
-import tossRouter from "@/toss/toss.procedure.ts";
+import tossRouter from "./toss/toss.procedure.ts";
 
 const router = {
   ...tossRouter,

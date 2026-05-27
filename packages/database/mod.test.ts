@@ -1,6 +1,7 @@
-import { create } from "@/mod.ts";
 import { describe, it } from "@std/testing/bdd";
 import { assertEquals } from "@std/assert";
+
+import { create } from "./mod.ts";
 
 describe("create", () => {
   it("returns a Drizzle database instance", () => {

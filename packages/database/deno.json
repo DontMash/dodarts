@@ -6,7 +6,6 @@
     "./toss": "./toss/toss.repository.ts"
   },
   "imports": {
-    "@/": "./",
     "@libsql/client": "npm:@libsql/client@^0.17.3",
     "drizzle-kit": "npm:drizzle-kit@^0.31.10",
     "drizzle-orm": "npm:drizzle-orm@^0.45.2",
@@ -19,5 +18,12 @@
     "update": "deno task generate && deno task push",
     "check": "deno run --allow-read --allow-env --allow-sys npm:drizzle-kit check --config=./config.ts",
     "studio": "deno run --allow-read --allow-net --allow-env --allow-sys --allow-ffi --allow-run npm:drizzle-kit studio --config=./config.ts"
+  },
+  "lint": {
+    "rules": {
+      "exclude": [
+        "no-slow-types"
+      ]
+    }
   }
 }

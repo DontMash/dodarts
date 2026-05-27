@@ -8,12 +8,14 @@ ORPC.
 ```
 deno.json          ← workspace root ("apps/*", "packages/*")
 apps/backend/      ← Hono + ORPC server, input consumer
+apps/frontend/     ← TanStack Start (SPA mode) + React + Tailwind, realtime throws display
 packages/api/      ← @dodarts/api — ORPC router, HTTP/WebSocket handlers, typed client factory
 packages/database/ ← @dodarts/database — Drizzle libSQL schema, migrations, CRUD repos
 packages/shared/   ← @dodarts/shared — .env loading + Zod validation (leaf package)
 ```
 
-Dependency graph: `shared` ← `database` ← `api` ← `apps/*`
+Dependency graph: `shared` ← `database` ← `api` ← `apps/*`, `api` ←
+`apps/frontend`
 
 ## Commands
 
@@ -23,6 +25,9 @@ All tasks run from the workspace root or within a package.
 | --------------------------------------------- | ----------------------------------- |
 | `deno task dev` (in `apps/backend`)           | Start backend dev server with watch |
 | `deno task start` (in `apps/backend`)         | Run backend production              |
+| `deno task dev` (in `apps/frontend`)          | Start frontend dev server (Vite)    |
+| `deno task build` (in `apps/frontend`)        | Build frontend for production       |
+| `deno task preview` (in `apps/frontend`)      | Preview production build            |
 | `deno task check` (in `packages/database`)    | Check drizzle status                |
 | `deno task generate` (in `packages/database`) | Generate drizzle migrations         |
 | `deno task push` (in `packages/database`)     | Push drizzle schema to DB           |
@@ -36,6 +41,8 @@ All tasks run from the workspace root or within a package.
 
 - **Required**: `DATABASE_URL` — validated by `@dodarts/shared`. See
   `.env.example` for a starting point.
+- **Frontend**: `VITE_WS_URL` — WebSocket URL for ORPC client (e.g.
+  `ws://localhost:8000/api`). See `apps/frontend/.env.example`.
 - All `.env` files are gitignored except `.env.example`; local overrides like
   `.env.local` are also excluded to prevent leaks.
 - The backend hardcodes `ws://autodarts.local:3180/api/events` for the Autodarts
@@ -45,8 +52,12 @@ All tasks run from the workspace root or within a package.
 
 - **API layer**: ORPC (`@orpc/server`) over Hono, with HTTP fetch and WebSocket
   upgrade handlers exported from `packages/api/mod.ts`.
-- **Real-time**: The `subscribe` procedure uses pub/sub between the HTTP handler
-  (dispatcher) and WS subscriber iterators.
+- **Real-time**: The `subscribe` procedure uses event iterators over WebSocket.
+  The frontend uses a single WebSocket client for both history (`toss.list`) and
+  real-time updates (`toss.subscribe`).
+- **Frontend**: TanStack Start in SPA mode (no SSR). Client-side routing with
+  TanStack Router, styled with Tailwind CSS. Dartboard visualization plots toss
+  coordinates; list shows recent throws with live updates.
 - **Soft deletes**: `tosses` table has `deleted_at`; all queries filter with
   `isDeleted = sql\`${table.deleted_at} is null\``.
 - **Database**: libSQL via Drizzle ORM..
@@ -64,3 +75,5 @@ After any edit, run in order:
    `deno task --cwd=packages/database check`) — if it returns false, run
    `deno task --cwd=packages/database update` to regenerate migrations and push
    the schema.
+
+or run `deno task verify` to run all steps in one from root.
