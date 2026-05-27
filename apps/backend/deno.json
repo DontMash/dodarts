@@ -1,8 +1,10 @@
 {
   "imports": {
     "@/": "./",
+    "@std/path": "jsr:@std/path@^1.1.5",
     "hono": "jsr:@hono/hono@^4.12.18",
-    "partysocket": "npm:partysocket@^1.1.19"
+    "partysocket": "npm:partysocket@^1.1.19",
+    "zod": "npm:zod@^4.4.3"
   },
   "tasks": {
     "dev": "deno run --allow-read --allow-net --allow-env --allow-ffi --watch main.ts",

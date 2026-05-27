@@ -11,11 +11,9 @@ apps/backend/      ← Hono + ORPC server, input consumer
 apps/frontend/     ← TanStack Start (SPA mode) + React + Tailwind, realtime throws display
 packages/api/      ← @dodarts/api — ORPC router, HTTP/WebSocket handlers, typed client factory
 packages/database/ ← @dodarts/database — Drizzle libSQL schema, migrations, CRUD repos
-packages/shared/   ← @dodarts/shared — .env loading + Zod validation (leaf package)
 ```
 
-Dependency graph: `shared` ← `database` ← `api` ← `apps/*`, `api` ←
-`apps/frontend`
+Dependency graph: `database` ← `api` ← `apps/*`, `api` ← `apps/frontend`
 
 ## Workspace docs
 
@@ -23,7 +21,6 @@ Dependency graph: `shared` ← `database` ← `api` ← `apps/*`, `api` ←
 - [Frontend](./apps/frontend/AGENTS.md)
 - [API](./packages/api/AGENTS.md)
 - [Database](./packages/database/AGENTS.md)
-- [Shared](./packages/shared/AGENTS.md)
 
 ## Tests
 

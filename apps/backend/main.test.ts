@@ -1,4 +1,3 @@
-// deno-coverage-ignore-start
 import { describe, it } from "@std/testing/bdd";
 import { assertEquals } from "@std/assert";
 import { assertSpyCalls, spy } from "@std/testing/mock";

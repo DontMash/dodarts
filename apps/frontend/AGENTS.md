@@ -4,16 +4,16 @@ TanStack Start (SPA mode) + React + Tailwind, realtime throws display.
 
 ## Commands
 
-| Command             | Description                         |
-| ------------------- | ----------------------------------- |
-| `deno task dev`     | Start dev server (Vite)             |
-| `deno task build`   | Build for production                |
-| `deno task preview` | Preview production build            |
+| Command             | Description              |
+| ------------------- | ------------------------ |
+| `deno task dev`     | Start dev server (Vite)  |
+| `deno task build`   | Build for production     |
+| `deno task preview` | Preview production build |
 
 ## Environment
 
-- `VITE_WS_URL` — WebSocket URL for ORPC client (e.g. `ws://localhost:8000/api`).
-  See `.env.example`.
+- `VITE_WS_URL` — WebSocket URL for ORPC client (e.g.
+  `ws://localhost:8000/api`). See `.env.example`.
 
 ## Architecture notes
 

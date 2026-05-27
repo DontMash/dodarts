@@ -2,7 +2,7 @@ import { handler, websocketHandler } from "@dodarts/api";
 import { createRouterClient } from "@dodarts/api/client";
 import type { Emitter } from "@dodarts/api/emitter";
 import { create as createDb, type Database } from "@dodarts/database";
-import { env } from "@dodarts/shared";
+import { env } from "./env.ts";
 import { Hono } from "hono";
 import EventEmitter from "node:events";
 import { WebSocket } from "partysocket";

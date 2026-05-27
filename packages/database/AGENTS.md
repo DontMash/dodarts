@@ -4,13 +4,13 @@ Drizzle libSQL schema, migrations, CRUD repos.
 
 ## Commands
 
-| Command              | Description                         |
-| -------------------- | ----------------------------------- |
-| `deno task check`    | Check drizzle status                |
-| `deno task generate` | Generate drizzle migrations         |
-| `deno task push`     | Push drizzle schema to DB           |
-| `deno task update`   | Generate + push in one step         |
-| `deno task studio`   | Open drizzle Studio                 |
+| Command              | Description                 |
+| -------------------- | --------------------------- |
+| `deno task check`    | Check drizzle status        |
+| `deno task generate` | Generate drizzle migrations |
+| `deno task push`     | Push drizzle schema to DB   |
+| `deno task update`   | Generate + push in one step |
+| `deno task studio`   | Open drizzle Studio         |
 
 ## Architecture notes
 
