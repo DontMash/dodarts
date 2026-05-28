@@ -4,6 +4,7 @@ import { IconCircleDashed } from "@tabler/icons-react";
 import { api, type Toss } from "@/lib/api";
 import { Dartboard } from "@/components/dartboard";
 import { TossList } from "@/components/toss-list";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/")({ component: Dashboard });
 
@@ -74,14 +75,23 @@ function Dashboard() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="flex items-center justify-center">
-            <Dartboard tosses={tosses} />
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Dartboard</CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-center">
+              <Dartboard tosses={tosses} />
+            </CardContent>
+          </Card>
 
-          <div className="flex flex-col gap-3">
-            <h2 className="font-heading text-lg font-medium">Recent Throws</h2>
-            <TossList tosses={tosses} latestId={tosses[0]?.id} />
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Throws</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TossList tosses={tosses} latestId={tosses[0]?.id} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

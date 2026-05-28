@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "commit": {
+      "source": "razzeee/skills",
+      "sourceType": "github",
+      "skillPath": "commit/SKILL.md",
+      "computedHash": "a843c62d7f2a6c0905302de14575075d0db5e13557f302f2526c701320647ae2"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "80a6226e78f6d1fe464214ae0ef449d49d8ffaa3e7704f011e9b418c678ad4d1"
+    }
+  }
+}

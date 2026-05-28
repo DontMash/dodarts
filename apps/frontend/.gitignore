@@ -10,3 +10,5 @@ __unconfig*
 todos.json
 deno.lock
 .vite
+
+package.json

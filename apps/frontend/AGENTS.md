@@ -23,3 +23,11 @@ TanStack Start (SPA mode) + React + Tailwind, realtime throws display.
 - List shows recent throws with live updates.
 - Uses a single WebSocket client for both history (`toss.list`) and real-time
   updates (`toss.subscribe`).
+
+## UI Components
+
+- Always use `npx shadcn@latest add <component>` to create UI components first.
+- If shadcn doesn't have the component you need, create a custom one in
+  `src/components/` (not in `src/components/ui/`).
+- Prefer composing shadcn primitives over writing custom styled elements.
+- The project uses the `base-sera` style with `taupe` base color.

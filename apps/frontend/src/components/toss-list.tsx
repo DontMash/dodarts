@@ -1,4 +1,7 @@
 import type { Toss } from "@/lib/api.ts";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "../lib/utils.ts";
 
 interface TossListProps {
   tosses: Toss[];
@@ -53,70 +56,68 @@ function getBadgeColor(toss: Toss): string {
 export function TossList({ tosses, latestId }: TossListProps) {
   if (tosses.length === 0) {
     return (
-      <div className="flex h-40 items-center justify-center text-muted-foreground">
+      <p className="flex h-40 items-center justify-center text-muted-foreground">
         No throws yet. Start throwing!
-      </div>
+      </p>
     );
   }
 
   return (
-    <div className="flex max-h-[500px] flex-col gap-1 overflow-y-auto p-2">
-      {tosses.map((toss) => {
-        const isLatest = toss.id === latestId;
-        const points = getPoints(toss);
-        const badge = getSegmentBadge(toss);
+    <ScrollArea className="h-[500px]">
+      <div className="flex flex-col gap-1 pl-1 py-1 pr-3">
+        {tosses.map((toss) => {
+          const isLatest = toss.id === latestId;
+          const points = getPoints(toss);
+          const badge = getSegmentBadge(toss);
 
-        return (
-          <div
-            key={toss.id}
-            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all ${
-              isLatest
-                ? "bg-primary/10 ring-1 ring-primary/30"
-                : "hover:bg-muted/50"
-            }`}
-          >
-            <span className="flex min-w-[60px] items-center gap-1.5">
-              {badge && (
-                <span
-                  className={`rounded px-1.5 py-0.5 text-xs font-semibold ${
-                    getBadgeColor(toss)
-                  }`}
-                >
-                  {badge}
-                </span>
-              )}
-              <span className="font-medium">
-                {toss.name === "Miss" || toss.name === "25" ||
-                    toss.name === "Bull"
-                  ? toss.name
-                  : toss.name.slice(badge.length)}
-              </span>
-            </span>
-
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <span className="font-mono text-xs">{toss.value}</span>
-              {toss.multiplier > 1 && (
-                <>
-                  <span className="text-xs">×</span>
-                  <span className="font-mono text-xs">{toss.multiplier}</span>
-                </>
-              )}
-            </span>
-
-            <span
-              className={`ml-auto font-mono font-semibold ${
-                points === 0 ? "text-muted-foreground" : "text-foreground"
+          return (
+            <div
+              key={toss.id}
+              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all ${
+                isLatest
+                  ? "bg-primary/10 ring-1 ring-primary/30"
+                  : "hover:bg-muted/50"
               }`}
             >
-              {points}
-            </span>
+              <span className="flex min-w-[60px] items-center gap-1.5">
+                {badge && (
+                  <Badge className={cn(getBadgeColor(toss))}>
+                    {badge}
+                  </Badge>
+                )}
+                <span className="font-medium">
+                  {toss.name === "Miss" || toss.name === "25" ||
+                      toss.name === "Bull"
+                    ? toss.name
+                    : toss.name.slice(badge.length)}
+                </span>
+              </span>
 
-            <span className="min-w-[70px] text-right text-xs text-muted-foreground">
-              {formatTime(toss.meta.created_at)}
-            </span>
-          </div>
-        );
-      })}
-    </div>
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <span className="font-mono text-xs">{toss.value}</span>
+                {toss.multiplier > 1 && (
+                  <>
+                    <span className="text-xs">×</span>
+                    <span className="font-mono text-xs">{toss.multiplier}</span>
+                  </>
+                )}
+              </span>
+
+              <span
+                className={`ml-auto font-mono font-semibold ${
+                  points === 0 ? "text-muted-foreground" : "text-foreground"
+                }`}
+              >
+                {points}
+              </span>
+
+              <span className="min-w-[70px] text-right text-xs text-muted-foreground">
+                {formatTime(toss.meta.created_at)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </ScrollArea>
   );
 }
