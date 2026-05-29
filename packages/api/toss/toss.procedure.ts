@@ -1,24 +1,16 @@
-import type { Database } from "@dodarts/database";
 import {
   create as createToss,
   list as listToss,
   read as readToss,
 } from "@dodarts/database/toss";
-import { eventIterator, implement } from "@orpc/server";
-import { oc } from "@orpc/contract";
 
-import type { Emitter } from "../emitter.ts";
-import {
-  type Toss,
-  tossCreateSchema,
-  tossListSchema,
-  tossReadSchema,
-  tossSchema,
-} from "./toss.schema.ts";
+import { os } from "../contract.ts";
+import type { Toss } from "./toss.schema.ts";
 
-const map = (value: Awaited<ReturnType<typeof readToss>>): Toss => {
+const mapToss = (value: Awaited<ReturnType<typeof readToss>>): Toss => {
   return {
     id: value.id,
+    sessionId: value.session_id,
     name: value.name,
     segment: value.segment,
     value: value.value,
@@ -34,59 +26,45 @@ const map = (value: Awaited<ReturnType<typeof readToss>>): Toss => {
   };
 };
 
-const createContract = oc.input(tossCreateSchema).output(tossSchema).errors({
-  "SERVER_ISSUE": {},
-});
-const readContract = oc.input(tossReadSchema).output(tossSchema).errors({
-  "SERVER_ISSUE": {},
-});
-const listContract = oc
-  .input(tossListSchema)
-  .output(tossSchema.array());
-const subscribeContract = oc.output(eventIterator(tossSchema));
-const contract = {
-  toss: {
-    create: createContract,
-    read: readContract,
-    list: listContract,
-    subscribe: subscribeContract,
-  },
-};
-
-const os = implement(contract).$context<{ db: Database; emitter: Emitter }>();
-
-const create = os.toss.create.handler(async (
+export const tossCreate = os.toss.create.handler(async (
   { context, errors, input },
 ) => {
   try {
     const { db, emitter } = context;
     const entry = await createToss(db, {
       ...input,
+      session_id: input.sessionId,
       coords_x: input.coords.x,
       coords_y: input.coords.y,
     });
-    const toss = map(entry);
+    const toss = mapToss(entry);
     emitter.emit("toss:created", toss);
     return toss;
   } catch (err) {
     throw errors.SERVER_ISSUE({ message: `Failed to create Toss: ${err}` });
   }
 });
-const read = os.toss.read.handler(
+
+export const tossRead = os.toss.read.handler(
   async ({ context: { db }, errors, input }) => {
     try {
       const entry = await readToss(db, input);
-      return map(entry);
+      return mapToss(entry);
     } catch (err) {
       throw errors.SERVER_ISSUE({ message: `Failed to read Toss: ${err}` });
     }
   },
 );
-const list = os.toss.list.handler(async ({ context: { db }, input }) => {
-  const entries = await listToss(db, input);
-  return entries.map((entry) => map(entry));
-});
-const subscribe = os.toss.subscribe.handler(
+
+export const tossList = os.toss.list.handler(
+  async ({ context: { db }, input }) => {
+    const { sessionId, ...rest } = input;
+    const entries = await listToss(db, { ...rest, sessionId });
+    return entries.map((entry) => mapToss(entry));
+  },
+);
+
+export const tossSubscribe = os.toss.subscribe.handler(
   async function* ({ context }) {
     const { emitter } = context;
     while (true) {
@@ -97,13 +75,3 @@ const subscribe = os.toss.subscribe.handler(
     }
   },
 );
-
-const router = os.router({
-  toss: {
-    create,
-    read,
-    list,
-    subscribe,
-  },
-});
-export default router;

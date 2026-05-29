@@ -95,7 +95,8 @@ export const TOSS_SEGMENTS = [
 ] as const;
 
 export const tossSchema = z.object({
-  id: z.number().int(),
+  id: z.string().uuid(),
+  sessionId: z.string().uuid(),
   name: z.enum(TOSS_NAMES),
   segment: z.enum(TOSS_SEGMENTS),
   value: z.number().int(),
@@ -117,7 +118,7 @@ export const tossCreateSchema = tossSchema.omit({
 });
 
 export const tossReadSchema = z.object({
-  id: z.coerce.number().int().min(1),
+  id: z.string().uuid(),
 });
 
 export const TOSS_LIST_LIMIT_DEFAULT = 100 as const;
@@ -125,6 +126,7 @@ export const TOSS_LIST_OFFSET_DEFAULT = 0 as const;
 export const tossListSchema = z.object({
   limit: z.number().int().min(1).default(TOSS_LIST_LIMIT_DEFAULT),
   offset: z.number().int().min(0).default(TOSS_LIST_OFFSET_DEFAULT),
+  sessionId: z.string().uuid().optional(),
 }).default({
   limit: TOSS_LIST_LIMIT_DEFAULT,
   offset: TOSS_LIST_OFFSET_DEFAULT,

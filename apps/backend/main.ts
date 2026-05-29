@@ -1,6 +1,7 @@
 import { handler, websocketHandler } from "@dodarts/api";
 import { createRouterClient } from "@dodarts/api/client";
 import type { Emitter } from "@dodarts/api/emitter";
+import type { Session } from "@dodarts/api";
 import { create as createDb, type Database } from "@dodarts/database";
 import { Hono } from "hono";
 import EventEmitter from "node:events";
@@ -10,6 +11,9 @@ import { env } from "@/env.ts";
 import { AutodartsMessage } from "@/utils/autodarts.ts";
 
 type Client = ReturnType<typeof createRouterClient>;
+
+let activeSessionId: string | null = null;
+let autodartsSocket: WebSocket | null = null;
 
 export async function handleMessage(
   event: MessageEvent,
@@ -29,8 +33,17 @@ export async function handleMessage(
       if (!toss) {
         break;
       }
+
+      if (activeSessionId === null) {
+        console.warn(
+          "[Autodarts] Received throw but no active session — skipping",
+        );
+        break;
+      }
+
       try {
         await client.toss.create({
+          sessionId: activeSessionId,
           // deno-lint-ignore no-explicit-any
           name: toss.segment.name as any,
           // deno-lint-ignore no-explicit-any
@@ -52,7 +65,7 @@ export async function handleMessage(
   }
 }
 
-function connectAutodarts(
+export function connectAutodarts(
   client: Client,
   maxRetries = 5,
 ) {
@@ -60,22 +73,37 @@ function connectAutodarts(
     connectionTimeout: 1000,
     maxRetries,
   };
-  const socket = new WebSocket(
+  autodartsSocket = new WebSocket(
     "ws://autodarts.local:3180/api/events",
     [],
     options,
   );
 
-  socket.addEventListener("open", () => {
+  autodartsSocket.addEventListener("open", () => {
     console.info("[Autodarts] Connection opened");
   });
-  socket.addEventListener("message", (event) => handleMessage(event, client));
-  socket.addEventListener("error", () => {
+  autodartsSocket.addEventListener(
+    "message",
+    (event) => handleMessage(event, client),
+  );
+  autodartsSocket.addEventListener("error", () => {
     console.error("[Autodarts] Connection error");
   });
-  socket.addEventListener("close", () => {
+  autodartsSocket.addEventListener("close", () => {
     console.info("[Autodarts] Connection closed");
+    autodartsSocket = null;
   });
+}
+
+export function disconnectAutodarts() {
+  if (autodartsSocket) {
+    autodartsSocket.close();
+    autodartsSocket = null;
+  }
+}
+
+export function setActiveSession(session: Session | null) {
+  activeSessionId = session?.id ?? null;
 }
 
 export function createApp(context: { db: Database; emitter: Emitter }) {
@@ -113,6 +141,23 @@ if (import.meta.main) {
   const client = createRouterClient({ db, emitter });
   const app = createApp({ db, emitter });
 
-  connectAutodarts(client);
+  emitter.once("session:started", (session: Session) => {
+    setActiveSession(session);
+    connectAutodarts(client);
+  });
+
+  emitter.once("session:ended", (_session: Session) => {
+    setActiveSession(null);
+    disconnectAutodarts();
+  });
+
+  (async () => {
+    const session = await client.session.active();
+    if (session) {
+      setActiveSession(session);
+      connectAutodarts(client);
+    }
+  })();
+
   Deno.serve(app.fetch);
 }

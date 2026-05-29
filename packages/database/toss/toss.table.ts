@@ -1,7 +1,9 @@
 // deno-coverage-ignore-file
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { sqliteTable } from "drizzle-orm/sqlite-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+
+import { sessionTable } from "../session/session.table.ts";
 
 export const TOSS_NAMES = [
   "Miss",
@@ -98,7 +100,8 @@ export const TOSS_SEGMENTS = [
 ] as const;
 
 export const tossTable = sqliteTable("tosses", (t) => ({
-  id: t.integer("id").primaryKey({ autoIncrement: true }),
+  id: t.text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  session_id: t.text("session_id").notNull().references(() => sessionTable.id),
   name: t.text({
     enum: TOSS_NAMES,
   }).notNull(),
@@ -116,6 +119,13 @@ export const tossTable = sqliteTable("tosses", (t) => ({
     sql`(CURRENT_TIMESTAMP)`,
   ).notNull(),
   deleted_at: t.integer({ mode: "timestamp_ms" }),
+}));
+
+export const tossRelations = relations(tossTable, ({ one }) => ({
+  session: one(sessionTable, {
+    fields: [tossTable.session_id],
+    references: [sessionTable.id],
+  }),
 }));
 
 export const tossInsertSchema = createInsertSchema(tossTable);

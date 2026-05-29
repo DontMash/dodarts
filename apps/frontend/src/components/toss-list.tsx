@@ -5,7 +5,7 @@ import { cn } from "../lib/utils.ts";
 
 interface TossListProps {
   tosses: Toss[];
-  latestId?: number;
+  latestId?: string;
 }
 
 function formatTime(timestamp: number): string {

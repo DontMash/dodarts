@@ -7,7 +7,7 @@ import type { Database } from "@dodarts/database";
 
 import type { Emitter, EventMap } from "../emitter.ts";
 import router from "../router.ts";
-import type { Toss } from "./toss.schema.ts";
+import type { Toss } from "../toss/toss.schema.ts";
 
 class MockEmitter implements Emitter {
   #listeners = new Map<string, ((payload: unknown) => void)[]>();
@@ -31,7 +31,8 @@ class MockEmitter implements Emitter {
 }
 
 interface MockToss {
-  id: number;
+  id: string;
+  session_id: string;
   name: string;
   segment: string;
   value: number;
@@ -47,12 +48,22 @@ function createMockDb(rows: MockToss[]): Database {
   const storedRows: MockToss[] = [...rows];
 
   const insertSpy = spy((_table: unknown) => ({
-    values: (values: Omit<MockToss, "id" | "updated_at" | "created_at">) => {
+    values: (
+      values: Omit<MockToss, "id" | "updated_at" | "created_at"> & {
+        id?: string;
+      },
+    ) => {
       const inserted: MockToss = {
-        id: storedRows.length + 1,
+        id: values.id ?? crypto.randomUUID(),
         updated_at: now,
         created_at: now,
-        ...values,
+        session_id: values.session_id,
+        name: values.name,
+        segment: values.segment,
+        value: values.value,
+        multiplier: values.multiplier,
+        coords_x: values.coords_x,
+        coords_y: values.coords_y,
       };
       storedRows.push(inserted);
       return {
@@ -91,10 +102,12 @@ function createMockDb(rows: MockToss[]): Database {
 
 const now = new Date(1000000);
 const earlier = new Date(999000);
+const sessionId = "550e8400-e29b-41d4-a716-446655440000";
 
 const mockTosses: MockToss[] = [
   {
-    id: 1,
+    id: crypto.randomUUID(),
+    session_id: sessionId,
     name: "M1",
     segment: "Single",
     value: 1,
@@ -105,7 +118,8 @@ const mockTosses: MockToss[] = [
     created_at: earlier,
   },
   {
-    id: 2,
+    id: crypto.randomUUID(),
+    session_id: sessionId,
     name: "S10",
     segment: "Single",
     value: 10,
@@ -116,7 +130,8 @@ const mockTosses: MockToss[] = [
     created_at: earlier,
   },
   {
-    id: 3,
+    id: crypto.randomUUID(),
+    session_id: sessionId,
     name: "D20",
     segment: "Double",
     value: 20,
@@ -137,6 +152,7 @@ describe("toss.create", () => {
 
     // Act
     const result = await client.toss.create({
+      sessionId,
       name: "T20",
       segment: "Triple",
       value: 20,
@@ -145,12 +161,13 @@ describe("toss.create", () => {
     });
 
     // Assert
+    assertEquals(result.sessionId, sessionId);
     assertEquals(result.name, "T20");
     assertEquals(result.segment, "Triple");
     assertEquals(result.value, 20);
     assertEquals(result.multiplier, 3);
     assertEquals(result.coords, { x: null, y: null });
-    assertEquals(typeof result.id, "number");
+    assertEquals(typeof result.id, "string");
     assertEquals(typeof result.meta.created_at, "number");
     assertEquals(typeof result.meta.updated_at, "number");
   });
@@ -163,6 +180,7 @@ describe("toss.create", () => {
 
     // Act
     const result = await client.toss.create({
+      sessionId,
       name: "S5",
       segment: "Single",
       value: 5,
@@ -183,6 +201,7 @@ describe("toss.create", () => {
 
     // Act
     await client.toss.create({
+      sessionId,
       name: "Bull",
       segment: "Double",
       value: 50,
@@ -209,6 +228,7 @@ describe("toss.create", () => {
     await assertRejects(
       () =>
         client.toss.create({
+          sessionId,
           name: "Miss",
           segment: "Outside",
           value: 0,
@@ -227,10 +247,11 @@ describe("toss.read", () => {
     const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
-    const result = await client.toss.read({ id: 1 });
+    const result = await client.toss.read({ id: mockTosses[0].id });
 
     // Assert
-    assertEquals(result.id, 1);
+    assertEquals(result.id, mockTosses[0].id);
+    assertEquals(result.sessionId, sessionId);
     assertEquals(result.name, "M1");
     assertEquals(result.segment, "Single");
     assertEquals(result.value, 1);
@@ -239,7 +260,8 @@ describe("toss.read", () => {
   it("returns toss with optional coords", async () => {
     // Arrange
     const tossWithCoords: MockToss = {
-      id: 2,
+      id: crypto.randomUUID(),
+      session_id: sessionId,
       name: "S10",
       segment: "Single",
       value: 10,
@@ -254,7 +276,7 @@ describe("toss.read", () => {
     const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
-    const result = await client.toss.read({ id: 2 });
+    const result = await client.toss.read({ id: tossWithCoords.id });
 
     // Assert
     assertEquals(result.coords.x, 5.0);
@@ -268,14 +290,16 @@ describe("toss.read", () => {
     const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act & Assert
-    await assertRejects(() => client.toss.read({ id: 999 }));
+    await assertRejects(() =>
+      client.toss.read({ id: "99999999-0000-0000-0000-000000000000" })
+    );
   });
 
   it("filters out soft-deleted tosses", async () => {
     // Arrange
     const deletedToss: MockToss = {
       ...mockTosses[0],
-      id: 99,
+      id: crypto.randomUUID(),
       deleted_at: Date.now(),
     };
     const db = createMockDb([deletedToss]);
@@ -283,7 +307,7 @@ describe("toss.read", () => {
     const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act & Assert
-    await assertRejects(() => client.toss.read({ id: 99 }));
+    await assertRejects(() => client.toss.read({ id: deletedToss.id }));
   });
 
   it("calls db.select once", async () => {
@@ -293,7 +317,7 @@ describe("toss.read", () => {
     const client = createRouterClient(router, { context: { db, emitter } });
 
     // Act
-    await client.toss.read({ id: 1 });
+    await client.toss.read({ id: mockTosses[0].id });
 
     // Assert
     assertSpyCalls(db.select as ReturnType<typeof spy>, 1);
@@ -350,7 +374,7 @@ describe("toss.list", () => {
     // Arrange
     const tosses: MockToss[] = [
       ...mockTosses,
-      { ...mockTosses[0], id: 99, deleted_at: Date.now() },
+      { ...mockTosses[0], id: crypto.randomUUID(), deleted_at: Date.now() },
     ];
     const db = createMockDb(tosses);
     const emitter = new MockEmitter();
@@ -361,7 +385,7 @@ describe("toss.list", () => {
 
     // Assert
     assertEquals(result.length, 3);
-    assertEquals(result.every((t) => t.id !== 99), true);
+    assertEquals(result.every((t) => typeof t.id === "string"), true);
   });
 
   it("calls db.select once", async () => {
@@ -388,6 +412,7 @@ describe("toss.subscribe", () => {
     // Act
     const iterator = await client.toss.subscribe();
     const createPromise = client.toss.create({
+      sessionId,
       name: "Bull",
       segment: "Double",
       value: 50,

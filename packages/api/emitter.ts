@@ -1,6 +1,7 @@
+import type { SessionEventMap } from "./session/session.event.ts";
 import type { TossEventMap } from "./toss/toss.event.ts";
 
-export type EventMap = TossEventMap;
+export type EventMap = TossEventMap & SessionEventMap;
 
 export interface Emitter {
   emit<K extends keyof EventMap>(event: K, payload: EventMap[K]): void;
@@ -11,3 +12,4 @@ export interface Emitter {
 }
 
 export type { TossEventMap };
+export type { SessionEventMap };

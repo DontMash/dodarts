@@ -10,6 +10,7 @@ type TossSelectSingle = z.infer<typeof tossSelectSingleSchema>;
 const tossSelectMultipleSchema = z.object({
   limit: z.number().int().min(1),
   offset: z.number().int().min(0),
+  sessionId: z.string().uuid().optional(),
 });
 type TossSelectMultiple = z.infer<typeof tossSelectMultipleSchema>;
 
@@ -34,9 +35,12 @@ export const read = async (db: Database, input: TossSelectSingle) => {
   return tosses[0];
 };
 export const list = async (db: Database, input: TossSelectMultiple) => {
-  const { limit, offset } = tossSelectMultipleSchema.parse(input);
+  const { limit, offset, sessionId } = tossSelectMultipleSchema.parse(input);
+  const conditions = sessionId
+    ? and(eq(tossTable.session_id, sessionId), isDeleted)
+    : isDeleted;
   const tosses = await db.select().from(tossTable).where(
-    isDeleted,
+    conditions,
   ).orderBy(desc(tossTable.created_at)).limit(limit).offset(offset);
   return tosses;
 };

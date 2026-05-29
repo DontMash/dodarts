@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "exports": {
     ".": "./mod.ts",
+    "./session": "./session/session.repository.ts",
     "./toss": "./toss/toss.repository.ts"
   },
   "imports": {
@@ -19,11 +20,12 @@
     "check": "deno run --allow-read --allow-env --allow-sys npm:drizzle-kit check --config=./config.ts",
     "studio": "deno run --allow-read --allow-net --allow-env --allow-sys --allow-ffi --allow-run npm:drizzle-kit studio --config=./config.ts"
   },
+  "fmt": {
+    "exclude": ["migrations"]
+  },
   "lint": {
     "rules": {
-      "exclude": [
-        "no-slow-types"
-      ]
+      "exclude": ["no-slow-types"]
     }
   }
 }

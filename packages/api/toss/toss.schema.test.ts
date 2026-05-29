@@ -10,8 +10,11 @@ import {
   tossSchema,
 } from "./toss.schema.ts";
 
+const uuid = "550e8400-e29b-41d4-a716-446655440000";
+
 const validToss = {
-  id: 1,
+  id: uuid,
+  sessionId: uuid,
   name: "T20" as const,
   segment: "Triple" as const,
   value: 20,
@@ -24,7 +27,8 @@ describe("tossSchema", () => {
   it("accepts a valid toss", () => {
     const result = tossSchema.parse(validToss);
 
-    assertEquals(result.id, 1);
+    assertEquals(result.id, uuid);
+    assertEquals(result.sessionId, uuid);
     assertEquals(result.name, "T20");
     assertEquals(result.segment, "Triple");
     assertEquals(result.coords.x, 1.5);
@@ -50,11 +54,36 @@ describe("tossSchema", () => {
       tossSchema.parse({ ...validToss, segment: "Quadruple" })
     );
   });
+
+  it("rejects missing sessionId", () => {
+    assertThrows(() =>
+      tossSchema.parse({
+        id: uuid,
+        name: "T20",
+        segment: "Triple",
+        value: 20,
+        multiplier: 3,
+        coords: { x: 1.5, y: -2.3 },
+        meta: { updated_at: 1000000, created_at: 999000 },
+      })
+    );
+  });
+
+  it("rejects non-UUID id", () => {
+    assertThrows(() => tossSchema.parse({ ...validToss, id: "not-a-uuid" }));
+  });
+
+  it("rejects non-UUID sessionId", () => {
+    assertThrows(() =>
+      tossSchema.parse({ ...validToss, sessionId: "not-a-uuid" })
+    );
+  });
 });
 
 describe("tossCreateSchema", () => {
   it("accepts valid input without id and meta", () => {
     const input = {
+      sessionId: uuid,
       name: "S5" as const,
       segment: "Single" as const,
       value: 5,
@@ -64,6 +93,7 @@ describe("tossCreateSchema", () => {
 
     const result = tossCreateSchema.parse(input);
 
+    assertEquals(result.sessionId, uuid);
     assertEquals(result.name, "S5");
     assertEquals(result.segment, "Single");
     assertEquals(result.value, 5);
@@ -72,6 +102,7 @@ describe("tossCreateSchema", () => {
   it("rejects input with unknown name", () => {
     assertThrows(() =>
       tossCreateSchema.parse({
+        sessionId: uuid,
         name: "Z1",
         segment: "Single",
         value: 1,
@@ -83,20 +114,18 @@ describe("tossCreateSchema", () => {
 });
 
 describe("tossReadSchema", () => {
-  it("accepts a valid id", () => {
-    const result = tossReadSchema.parse({ id: 42 });
+  it("accepts a valid UUID id", () => {
+    const result = tossReadSchema.parse({ id: uuid });
 
-    assertEquals(result.id, 42);
+    assertEquals(result.id, uuid);
   });
 
-  it("coerces string id to number", () => {
-    const result = tossReadSchema.parse({ id: "7" });
-
-    assertEquals(result.id, 7);
+  it("rejects a non-UUID id", () => {
+    assertThrows(() => tossReadSchema.parse({ id: "abc" }));
   });
 
-  it("rejects id less than 1", () => {
-    assertThrows(() => tossReadSchema.parse({ id: 0 }));
+  it("rejects an empty string id", () => {
+    assertThrows(() => tossReadSchema.parse({ id: "" }));
   });
 });
 
@@ -113,6 +142,16 @@ describe("tossListSchema", () => {
 
     assertEquals(result.limit, 10);
     assertEquals(result.offset, 5);
+  });
+
+  it("accepts optional sessionId filter", () => {
+    const result = tossListSchema.parse({
+      limit: 10,
+      offset: 0,
+      sessionId: uuid,
+    });
+
+    assertEquals(result.sessionId, uuid);
   });
 
   it("rejects limit less than 1", () => {

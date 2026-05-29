@@ -70,7 +70,7 @@ describe("createClient", () => {
 });
 
 describe("createRouterClient", () => {
-  it("returns an object with toss procedures", () => {
+  it("returns an object with toss and session procedures", () => {
     const db = createMockDb();
     const client = createRouterClient({ db, emitter: mockEmitter });
 
@@ -79,5 +79,12 @@ describe("createRouterClient", () => {
     assertEquals(typeof client.toss.read, "function");
     assertEquals(typeof client.toss.list, "function");
     assertEquals(typeof client.toss.subscribe, "function");
+    assertEquals(typeof client.session, "object");
+    assertEquals(typeof client.session.create, "function");
+    assertEquals(typeof client.session.read, "function");
+    assertEquals(typeof client.session.list, "function");
+    assertEquals(typeof client.session.end, "function");
+    assertEquals(typeof client.session.active, "function");
+    assertEquals(typeof client.session.subscribe, "function");
   });
 });

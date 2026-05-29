@@ -5,8 +5,12 @@ import { assertEquals, assertRejects } from "@std/assert";
 import type { Database } from "../mod.ts";
 import { create, list, read } from "./toss.repository.ts";
 
+const sessionId = "550e8400-e29b-41d4-a716-446655440000";
+const otherSessionId = "660e8400-e29b-41d4-a716-446655440001";
+
 interface MockToss {
-  id: number;
+  id: string;
+  session_id: string;
   name: string;
   segment: string;
   value: number;
@@ -73,7 +77,8 @@ function createMockDb(rows: MockToss[]): Database {
 
 const mockTosses: MockToss[] = [
   {
-    id: 1,
+    id: crypto.randomUUID(),
+    session_id: sessionId,
     name: "M1",
     segment: "Single",
     value: 1,
@@ -82,7 +87,8 @@ const mockTosses: MockToss[] = [
     created_at: Date.now(),
   },
   {
-    id: 2,
+    id: crypto.randomUUID(),
+    session_id: sessionId,
     name: "S10",
     segment: "Single",
     value: 10,
@@ -93,7 +99,8 @@ const mockTosses: MockToss[] = [
     created_at: Date.now(),
   },
   {
-    id: 3,
+    id: crypto.randomUUID(),
+    session_id: otherSessionId,
     name: "D20",
     segment: "Double",
     value: 20,
@@ -107,6 +114,7 @@ describe("create", () => {
   it("inserts a toss and returns it", async () => {
     const db = createMockDb(mockTosses);
     const input = {
+      session_id: sessionId,
       name: "T20" as const,
       segment: "Triple" as const,
       value: 20,
@@ -119,11 +127,13 @@ describe("create", () => {
     assertEquals(result.segment, "Triple");
     assertEquals(result.value, 20);
     assertEquals(result.multiplier, 3);
+    assertEquals(result.session_id, sessionId);
   });
 
   it("returns inserted toss with all fields", async () => {
     const db = createMockDb([]);
     const input = {
+      session_id: sessionId,
       name: "S5" as const,
       segment: "Single" as const,
       value: 5,
@@ -140,11 +150,13 @@ describe("create", () => {
     assertEquals(result.multiplier, 1);
     assertEquals(result.coords_x, 2.5);
     assertEquals(result.coords_y, 1.0);
+    assertEquals(result.session_id, sessionId);
   });
 
   it("calls db.insert", async () => {
     const db = createMockDb(mockTosses);
     const input = {
+      session_id: sessionId,
       name: "M1" as const,
       segment: "Single" as const,
       value: 1,
@@ -153,15 +165,16 @@ describe("create", () => {
 
     await create(db, input);
 
-    const insertSpy = db.insert as ReturnType<typeof spy>;
-    assertSpyCalls(insertSpy, 1);
+    const insertSpyRef = db.insert as ReturnType<typeof spy>;
+    assertSpyCalls(insertSpyRef, 1);
   });
 });
 
 describe("read", () => {
   it("returns toss by id", async () => {
     const db = createMockDb([{
-      id: 1,
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      session_id: sessionId,
       name: "M1",
       segment: "Single",
       value: 1,
@@ -170,16 +183,20 @@ describe("read", () => {
       created_at: Date.now(),
     }]);
 
-    const result = await read(db, { id: 1 });
+    const result = await read(db, {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+    });
 
     assertEquals(result.name, "M1");
     assertEquals(result.segment, "Single");
     assertEquals(result.value, 1);
+    assertEquals(result.session_id, sessionId);
   });
 
   it("returns toss with optional coords", async () => {
     const db = createMockDb([{
-      id: 2,
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      session_id: sessionId,
       name: "S10",
       segment: "Single",
       value: 10,
@@ -190,7 +207,9 @@ describe("read", () => {
       created_at: Date.now(),
     }]);
 
-    const result = await read(db, { id: 2 });
+    const result = await read(db, {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+    });
 
     assertEquals(result.name, "S10");
     assertEquals(result.coords_x, 5.0);
@@ -201,7 +220,8 @@ describe("read", () => {
     const db = createMockDb([]);
 
     await assertRejects(
-      async () => await read(db, { id: 999 }),
+      async () =>
+        await read(db, { id: "99999999-0000-0000-0000-000000000000" }),
       Error,
       "Toss not found",
     );
@@ -209,7 +229,8 @@ describe("read", () => {
 
   it("filters out soft-deleted tosses", async () => {
     const db = createMockDb([{
-      id: 4,
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      session_id: sessionId,
       name: "M5",
       segment: "Single",
       value: 5,
@@ -220,7 +241,8 @@ describe("read", () => {
     }]);
 
     await assertRejects(
-      async () => await read(db, { id: 4 }),
+      async () =>
+        await read(db, { id: "550e8400-e29b-41d4-a716-446655440000" }),
       Error,
       "Toss not found",
     );
@@ -228,7 +250,8 @@ describe("read", () => {
 
   it("calls db.select", async () => {
     const db = createMockDb([{
-      id: 1,
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      session_id: sessionId,
       name: "M1",
       segment: "Single",
       value: 1,
@@ -237,10 +260,10 @@ describe("read", () => {
       created_at: Date.now(),
     }]);
 
-    await read(db, { id: 1 });
+    await read(db, { id: "550e8400-e29b-41d4-a716-446655440000" });
 
-    const selectSpy = db.select as ReturnType<typeof spy>;
-    assertSpyCalls(selectSpy, 1);
+    const selectSpyRef = db.select as ReturnType<typeof spy>;
+    assertSpyCalls(selectSpyRef, 1);
   });
 });
 
@@ -278,7 +301,8 @@ describe("list", () => {
     const db = createMockDb([
       ...mockTosses,
       {
-        id: 4,
+        id: crypto.randomUUID(),
+        session_id: sessionId,
         name: "M5",
         segment: "Single",
         value: 5,
@@ -317,7 +341,16 @@ describe("list", () => {
 
     await list(db, { limit: 10, offset: 0 });
 
-    const selectSpy = db.select as ReturnType<typeof spy>;
-    assertSpyCalls(selectSpy, 1);
+    const selectSpyRef = db.select as ReturnType<typeof spy>;
+    assertSpyCalls(selectSpyRef, 1);
+  });
+
+  it("calls db.select with sessionId filter", async () => {
+    const db = createMockDb(mockTosses);
+
+    await list(db, { limit: 10, offset: 0, sessionId });
+
+    const selectSpyRef = db.select as ReturnType<typeof spy>;
+    assertSpyCalls(selectSpyRef, 1);
   });
 });

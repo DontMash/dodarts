@@ -3,11 +3,13 @@ import { assertEquals } from "@std/assert";
 import { assertSpyCalls, spy } from "@std/testing/mock";
 
 import { createRouterClient } from "@dodarts/api/client";
+import type { Toss } from "@dodarts/api";
 import type { Emitter } from "@dodarts/api/emitter";
 import type { Database } from "@dodarts/database";
 
-import { createApp, handleMessage } from "@/main.ts";
-import type { Toss } from "../../packages/api/toss/toss.schema.ts";
+import { createApp, handleMessage, setActiveSession } from "@/main.ts";
+
+const sessionId = "550e8400-e29b-41d4-a716-446655440000";
 
 const mockEmitter: Emitter = {
   emit() {},
@@ -30,7 +32,8 @@ function createMockDb(rows: MockToss[]): Database {
       },
     ) => {
       const inserted: MockToss = {
-        id: storedRows.length + 1,
+        id: crypto.randomUUID(),
+        sessionId: values.sessionId,
         name: values.name,
         segment: values.segment,
         value: values.value,
@@ -78,11 +81,18 @@ function createMockClient(db: Database) {
   return createRouterClient({ db, emitter: mockEmitter });
 }
 
+const activeSession = {
+  id: sessionId,
+  ended_at: null,
+  meta: { updated_at: 1000000, created_at: 999000 },
+} as const;
+
 describe("handleMessage", () => {
   it("processes state messages with Throw detected event and creates toss", async () => {
     // Arrange
     const db = createMockDb([]);
     const client = createMockClient(db);
+    setActiveSession(activeSession);
     const message = JSON.stringify({
       type: "state",
       data: {
@@ -112,6 +122,7 @@ describe("handleMessage", () => {
     // Arrange
     const db = createMockDb([]);
     const client = createMockClient(db);
+    setActiveSession(activeSession);
     const message = JSON.stringify({
       type: "state",
       data: {
@@ -145,6 +156,7 @@ describe("handleMessage", () => {
     // Arrange
     const db = createMockDb([]);
     const client = createMockClient(db);
+    setActiveSession(activeSession);
     const message = JSON.stringify({
       type: "state",
       data: {
@@ -169,6 +181,7 @@ describe("handleMessage", () => {
     // Arrange
     const db = createMockDb([]);
     const client = createMockClient(db);
+    setActiveSession(activeSession);
     const message = JSON.stringify({
       type: "state",
       data: {
@@ -192,6 +205,7 @@ describe("handleMessage", () => {
     // Arrange
     const db = createMockDb([]);
     const client = createMockClient(db);
+    setActiveSession(activeSession);
     const message = JSON.stringify({
       type: "state",
       data: {
@@ -299,6 +313,7 @@ describe("handleMessage", () => {
       select: spy(() => ({})),
     } as unknown as Database;
     const client = createMockClient(db);
+    setActiveSession(activeSession);
     const message = JSON.stringify({
       type: "state",
       data: {
@@ -319,6 +334,36 @@ describe("handleMessage", () => {
 
     // Act & Assert
     await handleMessage(event, client);
+  });
+
+  it("skips toss when no active session", async () => {
+    // Arrange
+    const db = createMockDb([]);
+    const client = createMockClient(db);
+    setActiveSession(null);
+    const message = JSON.stringify({
+      type: "state",
+      data: {
+        event: "Throw detected",
+        throws: [
+          {
+            segment: { name: "T20", bed: "Triple", number: 20, multiplier: 3 },
+            coords: { x: 1.5, y: -2.3 },
+          },
+        ],
+        connected: true,
+        running: true,
+        status: "Throw",
+        numThrows: 1,
+      },
+    });
+    const event = new MessageEvent("message", { data: message });
+
+    // Act
+    await handleMessage(event, client);
+
+    // Assert
+    assertSpyCalls(db.insert as ReturnType<typeof spy>, 0);
   });
 });
 
