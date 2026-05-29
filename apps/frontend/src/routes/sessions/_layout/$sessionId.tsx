@@ -28,6 +28,7 @@ function SessionDetailPage() {
   const { data: tosses, isLoading: tossesLoading } = useQuery({
     queryKey: ["tosses", sessionId],
     queryFn: () => api.toss.list({ sessionId, limit: TOSS_LIMIT, offset: 0 }),
+    enabled: !!session,
   });
 
   const endMutation = useMutation({

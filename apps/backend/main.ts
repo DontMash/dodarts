@@ -79,8 +79,11 @@ export function connectAutodarts(
     options,
   );
 
-  autodartsSocket.addEventListener("open", () => {
+  autodartsSocket.addEventListener("open", async () => {
     console.info("[Autodarts] Connection opened");
+
+    await fetch("http://autodarts.local:3180/api/start", { method: "PUT" });
+    await fetch("http://autodarts.local:3180/api/reset", { method: "POST" });
   });
   autodartsSocket.addEventListener(
     "message",
@@ -89,8 +92,10 @@ export function connectAutodarts(
   autodartsSocket.addEventListener("error", () => {
     console.error("[Autodarts] Connection error");
   });
-  autodartsSocket.addEventListener("close", () => {
+  autodartsSocket.addEventListener("close", async () => {
     console.info("[Autodarts] Connection closed");
+
+    await fetch("http://autodarts.local:3180/api/stop", { method: "PUT" });
     autodartsSocket = null;
   });
 }

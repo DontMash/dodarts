@@ -47,7 +47,10 @@ function createClient(options: ClientOptions) {
   }
 
   if (websocketUrl) {
-    const websocket = new WebSocket(websocketUrl);
+    const websocket = new WebSocket(websocketUrl, [], {
+      maxRetries: 5,
+      minReconnectionDelay: 1000,
+    });
     const link = new WebsocketRPCLink({ websocket });
     result.websocket = createORPCClient(link) as unknown as RouterClient<
       typeof router

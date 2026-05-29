@@ -38,6 +38,7 @@
     "npm:drizzle-kit@~0.31.10": "0.31.10",
     "npm:drizzle-orm@~0.45.2": "0.45.2_@libsql+client@0.17.3",
     "npm:drizzle-zod@~0.8.3": "0.8.3_drizzle-orm@0.45.2__@libsql+client@0.17.3_zod@4.4.3_@libsql+client@0.17.3",
+    "npm:partysocket@*": "1.1.19_react@19.2.6",
     "npm:partysocket@^1.1.19": "1.1.19_react@19.2.6",
     "npm:react-dom@^19.2.4": "19.2.6_react@19.2.6",
     "npm:react@^19.2.4": "19.2.6",

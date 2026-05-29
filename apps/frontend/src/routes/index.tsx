@@ -25,6 +25,7 @@ function Dashboard() {
   });
 
   useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
 
     async function init() {
@@ -42,7 +43,10 @@ function Dashboard() {
         if (cancelled) return;
         setTosses(history);
 
-        const subscription = await api.toss.subscribe({});
+        const subscription = await api.toss.subscribe(
+          {},
+          { signal: controller.signal },
+        );
         if (cancelled) return;
         setConnected(true);
 
@@ -53,8 +57,8 @@ function Dashboard() {
           }
         }
       } catch (err) {
-        console.log(err);
-        if (!cancelled) {
+        if (!cancelled && !controller.signal.aborted) {
+          console.error(err);
           setError(err instanceof Error ? err.message : "Connection failed");
         }
       }
@@ -64,6 +68,7 @@ function Dashboard() {
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [activeSession]);
 

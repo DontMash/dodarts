@@ -82,7 +82,7 @@ export const sessionActive = os.session.active.handler(
 );
 
 export const sessionSubscribe = os.session.subscribe.handler(
-  async function* ({ context }) {
+  async function* ({ context, signal }) {
     const { emitter } = context;
     const queue: Session[] = [];
     let resolveWait: (() => void) | null = null;
@@ -102,10 +102,17 @@ export const sessionSubscribe = os.session.subscribe.handler(
     emitter.on("session:started", onStarted);
     emitter.on("session:ended", onEnded);
 
+    const abortPromise = new Promise<never>((_, reject) => {
+      if (signal?.aborted) reject(signal.reason);
+      signal?.addEventListener("abort", () => reject(signal.reason), {
+        once: true,
+      });
+    });
+
     try {
       while (true) {
         while (queue.length === 0) {
-          await waiting;
+          await Promise.race([waiting, abortPromise]);
           waiting = new Promise<void>((r) => {
             resolveWait = r;
           });

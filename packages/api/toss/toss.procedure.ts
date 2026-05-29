@@ -65,7 +65,7 @@ export const tossList = os.toss.list.handler(
 );
 
 export const tossSubscribe = os.toss.subscribe.handler(
-  async function* ({ context }) {
+  async function* ({ context, signal }) {
     const { emitter } = context;
     const queue: Toss[] = [];
     let resolveWait: (() => void) | null = null;
@@ -80,10 +80,17 @@ export const tossSubscribe = os.toss.subscribe.handler(
 
     emitter.on("toss:created", onCreated);
 
+    const abortPromise = new Promise<never>((_, reject) => {
+      if (signal?.aborted) reject(signal.reason);
+      signal?.addEventListener("abort", () => reject(signal.reason), {
+        once: true,
+      });
+    });
+
     try {
       while (true) {
         while (queue.length === 0) {
-          await waiting;
+          await Promise.race([waiting, abortPromise]);
           waiting = new Promise<void>((r) => {
             resolveWait = r;
           });

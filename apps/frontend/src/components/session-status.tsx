@@ -39,11 +39,15 @@ export function SessionStatus({ compact = false }: SessionStatusProps) {
   });
 
   useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
 
     async function subscribe() {
       try {
-        const subscription = await api.session.subscribe({});
+        const subscription = await api.session.subscribe(
+          {},
+          { signal: controller.signal },
+        );
         if (cancelled) return;
         setSubscribed(true);
 
@@ -67,6 +71,7 @@ export function SessionStatus({ compact = false }: SessionStatusProps) {
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [queryClient]);
 
