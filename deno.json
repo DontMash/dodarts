@@ -10,7 +10,7 @@
     "test": "deno test --allow-write --allow-read --allow-env --allow-ffi",
     "test:coverage": "deno task test --coverage",
     "coverage": "deno coverage",
-    "verify": "deno fmt && deno check && deno lint && deno task test:coverage"
+    "verify": "deno fmt --check && deno check && deno lint && deno task test:coverage"
   },
   "fmt": {
     "exclude": [".opencode"]

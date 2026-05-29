@@ -13,6 +13,8 @@
     "@tailwindcss/vite": "npm:@tailwindcss/vite@^4.2.1",
     "@tanstack/devtools-vite": "npm:@tanstack/devtools-vite@^0.6.0",
     "@tanstack/react-devtools": "npm:@tanstack/react-devtools@^0.10.0",
+    "@tanstack/react-query": "npm:@tanstack/react-query@^5.90.3",
+    "@tanstack/react-query-devtools": "npm:@tanstack/react-query-devtools@^5.90.3",
     "@tanstack/react-router": "npm:@tanstack/react-router@^1.167.4",
     "@tanstack/react-router-devtools": "npm:@tanstack/react-router-devtools@^1.166.9",
     "@tanstack/react-start": "npm:@tanstack/react-start@^1.166.15",
@@ -33,15 +35,13 @@
     "build": "deno run -A vite build",
     "preview": "deno run -A vite preview"
   },
+  "fmt": {
+    "exclude": ["./src/routeTree.gen.ts"]
+  },
   "lint": {
-    "exclude": [
-      "./src/routeTree.gen.ts"
-    ],
+    "exclude": ["./src/routeTree.gen.ts"],
     "rules": {
-      "exclude": [
-        "no-slow-types",
-        "no-sloppy-imports"
-      ]
+      "exclude": ["no-slow-types", "no-sloppy-imports"]
     }
   }
 }
