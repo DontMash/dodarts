@@ -2,7 +2,7 @@ import { handler, websocketHandler } from "@dodarts/api";
 import { createRouterClient } from "@dodarts/api/client";
 import type { Emitter } from "@dodarts/api/emitter";
 import type { Session } from "@dodarts/api";
-import { create as createDb, type Database } from "@dodarts/database";
+import { create as createDb, type Database, migrate } from "@dodarts/database";
 import { Hono } from "hono";
 import EventEmitter from "node:events";
 import { WebSocket } from "partysocket";
@@ -142,6 +142,11 @@ export function createApp(context: { db: Database; emitter: Emitter }) {
 
 if (import.meta.main) {
   const db = createDb(env.DATABASE_URL);
+
+  console.info("[Database] Running migrations...");
+  await migrate(db, env.MIGRATIONS_PATH);
+  console.info("[Database] Migrations complete");
+
   const emitter: Emitter = new EventEmitter();
   const client = createRouterClient({ db, emitter });
   const app = createApp({ db, emitter });

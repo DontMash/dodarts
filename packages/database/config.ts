@@ -8,10 +8,17 @@ if (!DATABASE_URL) {
   throw new Error("DATABASE_URL is not set");
 }
 
+const MIGRATIONS_PATH = Deno.env.get("MIGRATIONS_PATH");
+if (!MIGRATIONS_PATH) {
+  throw new Error("MIGRATIONS_PATH is not set");
+}
+
+const schemaPath = new URL("./tables.ts", import.meta.url).pathname;
+
 export default defineConfig({
   dialect: "sqlite",
-  schema: "./tables.ts",
-  out: "./migrations",
+  schema: schemaPath,
+  out: MIGRATIONS_PATH,
   dbCredentials: {
     url: DATABASE_URL,
   },

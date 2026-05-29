@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "exports": {
     ".": "./mod.ts",
+    "./cli": "./cli.ts",
     "./session": "./session/session.repository.ts",
     "./toss": "./toss/toss.repository.ts"
   },
@@ -12,16 +13,6 @@
     "drizzle-orm": "npm:drizzle-orm@^0.45.2",
     "drizzle-zod": "npm:drizzle-zod@^0.8.3",
     "zod": "npm:zod@^4.4.3"
-  },
-  "tasks": {
-    "generate": "deno run --allow-write --allow-read --allow-env --allow-sys npm:drizzle-kit generate --config=./config.ts",
-    "push": "deno run --allow-read --allow-env --allow-sys --allow-ffi npm:drizzle-kit push --config=./config.ts",
-    "update": "deno task generate && deno task push",
-    "check": "deno run --allow-read --allow-env --allow-sys npm:drizzle-kit check --config=./config.ts",
-    "studio": "deno run --allow-read --allow-net --allow-env --allow-sys --allow-ffi --allow-run npm:drizzle-kit studio --config=./config.ts"
-  },
-  "fmt": {
-    "exclude": ["migrations"]
   },
   "lint": {
     "rules": {

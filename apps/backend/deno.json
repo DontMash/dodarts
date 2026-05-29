@@ -6,12 +6,18 @@
     "partysocket": "npm:partysocket@^1.1.19",
     "zod": "npm:zod@^4.4.3"
   },
-  "tasks": {
-    "dev": "deno run --allow-read --allow-net --allow-env --allow-ffi --watch main.ts",
-    "start": "deno run --allow-read --allow-net --allow-env --allow-ffi main.ts"
-  },
   "compilerOptions": {
     "jsx": "precompile",
     "jsxImportSource": "hono/jsx"
-  }
+  },
+  "tasks": {
+    "dev": "deno run --allow-read --allow-net --allow-env --allow-ffi --watch main.ts",
+    "start": "deno run --allow-read --allow-net --allow-env --allow-ffi main.ts",
+    "db:generate": "deno run --env-file=.env --allow-run @dodarts/database/cli generate",
+    "db:push": "deno run --env-file=.env --allow-run @dodarts/database/cli push",
+    "db:update": "deno task db:generate && deno task db:push",
+    "db:check": "deno run --env-file=.env --allow-run @dodarts/database/cli check",
+    "db:studio": "deno run --env-file=.env --allow-run @dodarts/database/cli studio"
+  },
+  "exclude": ["migrations"]
 }
