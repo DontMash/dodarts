@@ -28,6 +28,28 @@ class MockEmitter implements Emitter {
     existing.push(listener as (payload: unknown) => void);
     this.#listeners.set(key, existing);
   }
+
+  on<K extends keyof EventMap>(
+    event: K,
+    listener: (payload: EventMap[K]) => void,
+  ): void {
+    const key = event as string;
+    const existing = this.#listeners.get(key) ?? [];
+    existing.push(listener as (payload: unknown) => void);
+    this.#listeners.set(key, existing);
+  }
+
+  off<K extends keyof EventMap>(
+    event: K,
+    listener: (payload: EventMap[K]) => void,
+  ): void {
+    const key = event as string;
+    const existing = this.#listeners.get(key) ?? [];
+    this.#listeners.set(
+      key,
+      existing.filter((l) => l !== listener),
+    );
+  }
 }
 
 interface MockSession {

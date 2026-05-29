@@ -12,6 +12,8 @@ function createMockDb(): Database {
 const mockEmitter: Emitter = {
   emit() {},
   once() {},
+  on() {},
+  off() {},
 };
 
 // WebSocket and RPCLink create timers internally; disable leak detection for those tests.

@@ -67,11 +67,31 @@ export const tossList = os.toss.list.handler(
 export const tossSubscribe = os.toss.subscribe.handler(
   async function* ({ context }) {
     const { emitter } = context;
-    while (true) {
-      const toss = await new Promise<Toss>((resolve) => {
-        emitter.once("toss:created", resolve);
-      });
-      yield toss;
+    const queue: Toss[] = [];
+    let resolveWait: (() => void) | null = null;
+    let waiting = new Promise<void>((r) => {
+      resolveWait = r;
+    });
+
+    const onCreated = (t: Toss) => {
+      queue.push(t);
+      resolveWait?.();
+    };
+
+    emitter.on("toss:created", onCreated);
+
+    try {
+      while (true) {
+        while (queue.length === 0) {
+          await waiting;
+          waiting = new Promise<void>((r) => {
+            resolveWait = r;
+          });
+        }
+        yield queue.shift()!;
+      }
+    } finally {
+      emitter.off("toss:created", onCreated);
     }
   },
 );

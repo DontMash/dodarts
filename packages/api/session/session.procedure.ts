@@ -84,14 +84,37 @@ export const sessionActive = os.session.active.handler(
 export const sessionSubscribe = os.session.subscribe.handler(
   async function* ({ context }) {
     const { emitter } = context;
-    while (true) {
-      const session = await new Promise<Session>((resolve) => {
-        const onStarted = (s: Session) => resolve(s);
-        const onEnded = (s: Session) => resolve(s);
-        emitter.once("session:started", onStarted);
-        emitter.once("session:ended", onEnded);
-      });
-      yield session;
+    const queue: Session[] = [];
+    let resolveWait: (() => void) | null = null;
+    let waiting = new Promise<void>((r) => {
+      resolveWait = r;
+    });
+
+    const onStarted = (s: Session) => {
+      queue.push(s);
+      resolveWait?.();
+    };
+    const onEnded = (s: Session) => {
+      queue.push(s);
+      resolveWait?.();
+    };
+
+    emitter.on("session:started", onStarted);
+    emitter.on("session:ended", onEnded);
+
+    try {
+      while (true) {
+        while (queue.length === 0) {
+          await waiting;
+          waiting = new Promise<void>((r) => {
+            resolveWait = r;
+          });
+        }
+        yield queue.shift()!;
+      }
+    } finally {
+      emitter.off("session:started", onStarted);
+      emitter.off("session:ended", onEnded);
     }
   },
 );

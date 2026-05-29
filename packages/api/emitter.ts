@@ -9,6 +9,14 @@ export interface Emitter {
     event: K,
     listener: (payload: EventMap[K]) => void,
   ): void;
+  on<K extends keyof EventMap>(
+    event: K,
+    listener: (payload: EventMap[K]) => void,
+  ): void;
+  off<K extends keyof EventMap>(
+    event: K,
+    listener: (payload: EventMap[K]) => void,
+  ): void;
 }
 
 export type { TossEventMap };
